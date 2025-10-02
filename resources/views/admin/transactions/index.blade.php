@@ -31,7 +31,7 @@
             </div>
             <div class="ml-4">
                 <p class="text-sm font-medium text-gray-600">Chiffre d'affaires</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ number_format($summary['total_revenue'] ?? 0, 0, ',', ' ') }} FCFA</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ number_format($summary['total_revenue'] ?? 0, 0, ',', ' ') }} XOF</p>
             </div>
         </div>
     </div>
@@ -193,15 +193,15 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         @if($transaction->package)
                             <div class="text-sm font-medium text-gray-900">{{ $transaction->package->tracking_number }}</div>
-                            <div class="text-sm text-gray-500">{{ $transaction->package->origin_city }} → {{ $transaction->package->destination_city }}</div>
+                            <div class="text-sm text-gray-500">{{ $transaction->package->pickup_city }} → {{ $transaction->package->delivery_city }}</div>
                         @else
                             <span class="text-sm text-gray-400">Aucun colis</span>
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900">{{ number_format($transaction->amount, 0, ',', ' ') }} FCFA</div>
+                        <div class="text-sm font-medium text-gray-900">{{ number_format($transaction->amount, 0, ',', ' ') }} XOF</div>
                         @if($transaction->discount_amount > 0)
-                            <div class="text-xs text-green-600">-{{ number_format($transaction->discount_amount, 0, ',', ' ') }} FCFA</div>
+                            <div class="text-xs text-green-600">-{{ number_format($transaction->discount_amount, 0, ',', ' ') }} XOF</div>
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -252,8 +252,8 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div class="flex space-x-2">
-                            <a href="{{ route('admin.transactions.show', $transaction) }}" class="text-blue-600 hover:text-blue-900">Voir</a>
-                            <a href="{{ route('admin.transactions.edit', $transaction) }}" class="text-indigo-600 hover:text-indigo-900">Modifier</a>
+                            <a href="{{ route('admin.transactions.show', $transaction->transaction_id) }}" class="text-blue-600 hover:text-blue-900">Voir</a>
+                            <a href="{{ route('admin.transactions.edit', $transaction->transaction_id) }}" class="text-indigo-600 hover:text-indigo-900">Modifier</a>
                             
                             @if($transaction->status === 'pending')
                                 <!-- Quick Actions Dropdown -->

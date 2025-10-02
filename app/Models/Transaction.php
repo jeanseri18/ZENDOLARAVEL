@@ -30,6 +30,7 @@ class Transaction extends Model
         'receipt_url',
         'notes',
         'processed_by',
+        'promo_code_id',
     ];
     
     protected $casts = [
@@ -72,5 +73,10 @@ class Transaction extends Model
     public function processedBy()
     {
         return $this->belongsTo(User::class, 'processed_by', 'user_id');
+    }
+    
+    public function promoCode()
+    {
+        return $this->belongsTo(PromoCode::class, 'promo_code_id', 'promo_id');
     }
 }

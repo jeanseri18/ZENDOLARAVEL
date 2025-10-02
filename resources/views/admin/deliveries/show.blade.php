@@ -7,7 +7,7 @@
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-900">Livraison #{{ $delivery->delivery_id }}</h1>
         <div class="flex space-x-3">
-            <a href="{{ route('admin.deliveries.edit', $delivery) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+            <a href="{{ route('admin.deliveries.edit', $delivery->delivery_id) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
                 <i class="fas fa-edit mr-2"></i> Modifier
             </a>
             <a href="{{ route('admin.deliveries.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -54,7 +54,7 @@
                                 <div class="flex justify-between">
                                     <dt class="text-sm font-medium text-gray-500">Commission:</dt>
                                     <dd class="text-sm font-semibold text-green-600">
-                                        {{ number_format($delivery->commission_fee, 0, ',', ' ') }} FCFA
+                                        {{ number_format($delivery->commission_fee, 0, ',', ' ') }} XOF
                                     </dd>
                                 </div>
                                 @if($delivery->actual_delivery_time)
@@ -197,7 +197,7 @@
                         </div>
                         <div class="flex justify-between">
                             <dt class="text-sm font-medium text-gray-500">Description:</dt>
-                            <dd class="text-sm text-gray-900">{{ Str::limit($delivery->package->description, 50) }}</dd>
+                            <dd class="text-sm text-gray-900">{{ Str::limit($delivery->package->package_description, 50) }}</dd>
                         </div>
                         @if(isset($delivery->package->weight))
                         <div class="flex justify-between">
@@ -209,7 +209,7 @@
                         <div class="flex justify-between">
                             <dt class="text-sm font-medium text-gray-500">Prix:</dt>
                             <dd class="text-sm font-semibold text-green-600">
-                                {{ number_format($delivery->package->price, 0, ',', ' ') }} FCFA
+                                {{ number_format($delivery->package->price, 0, ',', ' ') }} XOF
                             </dd>
                         </div>
                         @endif
@@ -236,7 +236,7 @@
                     <div class="space-y-3">
                         <div class="flex justify-between">
                             <span class="font-medium text-gray-700">Nom:</span>
-                            <span class="text-gray-900">{{ $delivery->traveler->user->name }}</span>
+                            <span class="text-gray-900">{{ $delivery->traveler->user->first_name }} {{ $delivery->traveler->user->last_name }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="font-medium text-gray-700">Email:</span>

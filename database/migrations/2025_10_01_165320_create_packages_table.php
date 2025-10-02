@@ -39,6 +39,7 @@ return new class extends Migration
             $table->decimal('final_delivery_fee', 8, 2)->nullable();
             $table->enum('status', ['pending', 'accepted', 'picked_up', 'in_transit', 'arrived', 'out_for_delivery', 'delivered', 'cancelled', 'returned'])->default('pending');
             $table->enum('priority', ['standard', 'express', 'urgent'])->default('standard');
+            $table->enum('delivery_type', ['urban', 'intercity', 'international'])->nullable();
             $table->timestamp('accepted_at')->nullable();
             $table->timestamp('picked_up_at')->nullable();
             $table->timestamp('delivered_at')->nullable();
@@ -59,6 +60,7 @@ return new class extends Migration
             $table->index('created_at');
             $table->index('priority');
             $table->index('category');
+            $table->index('delivery_type');
         });
         
         // Add check constraints

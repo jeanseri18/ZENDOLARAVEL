@@ -16,6 +16,8 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    @yield('head')
 </head>
 <body class="font-sans antialiased bg-gray-100" x-data="{ sidebarOpen: false }">
     <div class="min-h-screen flex">

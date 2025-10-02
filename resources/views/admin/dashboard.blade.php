@@ -2,6 +2,10 @@
 
 @section('title', 'Tableau de Bord Admin')
 
+@section('head')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+@endsection
+
 @section('content')
 <div class="mb-6">
     <h1 class="text-2xl font-bold text-gray-900">Tableau de Bord</h1>
@@ -61,9 +65,43 @@
             </div>
             <div class="ml-4">
                 <p class="text-sm font-medium text-gray-600">Revenus</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ number_format($stats['revenue'] ?? 0, 0, ',', ' ') }} FCFA</p>
+                <p class="text-2xl font-semibold text-gray-900">{{ number_format($stats['revenue'] ?? 0, 0, ',', ' ') }} XOF</p>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Monthly Statistics Chart -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Évolution Mensuelle</h3>
+            <div class="flex space-x-2">
+                <button onclick="toggleChart('users')" class="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition-colors" id="btn-users">Utilisateurs</button>
+                <button onclick="toggleChart('packages')" class="px-3 py-1 text-xs bg-green-100 text-green-800 rounded-full hover:bg-green-200 transition-colors" id="btn-packages">Colis</button>
+                <button onclick="toggleChart('revenue')" class="px-3 py-1 text-xs bg-purple-100 text-purple-800 rounded-full hover:bg-purple-200 transition-colors" id="btn-revenue">Revenus</button>
+            </div>
+        </div>
+        <div class="h-64">
+            <canvas id="monthlyChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Package Status Pie Chart -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Répartition des Colis</h3>
+        <div class="h-64">
+            <canvas id="packageStatusChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly Revenue Chart -->
+<div class="bg-white rounded-lg shadow p-6 mb-8">
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Revenus Hebdomadaires</h3>
+    <div class="h-64">
+        <canvas id="weeklyRevenueChart"></canvas>
     </div>
 </div>
 
@@ -191,7 +229,7 @@
                                     {{ Str::limit($ticket->subject, 30) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {{ $ticket->user->name ?? 'N/A' }}
+                                    {{ ($ticket->user->first_name ?? '') . ' ' . ($ticket->user->last_name ?? '') ?: 'N/A' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
@@ -230,4 +268,195 @@
         </div>
     </div>
 </div>
+
+<script>
+// Données des graphiques depuis PHP
+const chartData = @json($chartData);
+
+// Configuration des couleurs
+const colors = {
+    primary: '#3B82F6',
+    success: '#10B981',
+    warning: '#F59E0B',
+    danger: '#EF4444',
+    purple: '#8B5CF6'
+};
+
+// Graphique mensuel (ligne)
+const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+let monthlyChart = new Chart(monthlyCtx, {
+    type: 'line',
+    data: {
+        labels: chartData.monthly.labels,
+        datasets: [{
+            label: 'Utilisateurs',
+            data: chartData.monthly.users,
+            borderColor: colors.primary,
+            backgroundColor: colors.primary + '20',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: '#F3F4F6'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Fonction pour basculer entre les données du graphique mensuel
+let currentDataset = 'users';
+function toggleChart(type) {
+    // Réinitialiser les styles des boutons
+    document.querySelectorAll('[id^="btn-"]').forEach(btn => {
+        btn.className = btn.className.replace(/bg-\w+-200/, 'bg-gray-100').replace(/text-\w+-800/, 'text-gray-600');
+    });
+    
+    // Activer le bouton sélectionné
+    const activeBtn = document.getElementById(`btn-${type}`);
+    activeBtn.className = activeBtn.className.replace('bg-gray-100 text-gray-600', `bg-${getColorClass(type)}-200 text-${getColorClass(type)}-800`);
+    
+    let data, label, color;
+    switch(type) {
+        case 'users':
+            data = chartData.monthly.users;
+            label = 'Utilisateurs';
+            color = colors.primary;
+            break;
+        case 'packages':
+            data = chartData.monthly.packages;
+            label = 'Colis';
+            color = colors.success;
+            break;
+        case 'revenue':
+            data = chartData.monthly.revenue;
+            label = 'Revenus (XOF)';
+            color = colors.purple;
+            break;
+    }
+    
+    monthlyChart.data.datasets[0] = {
+        label: label,
+        data: data,
+        borderColor: color,
+        backgroundColor: color + '20',
+        tension: 0.4,
+        fill: true
+    };
+    
+    monthlyChart.update();
+    currentDataset = type;
+}
+
+function getColorClass(type) {
+    switch(type) {
+        case 'users': return 'blue';
+        case 'packages': return 'green';
+        case 'revenue': return 'purple';
+        default: return 'gray';
+    }
+}
+
+// Graphique en secteurs pour les statuts des colis
+const packageStatusCtx = document.getElementById('packageStatusChart').getContext('2d');
+const packageStatusChart = new Chart(packageStatusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: chartData.packageStatuses.labels,
+        datasets: [{
+            data: chartData.packageStatuses.data,
+            backgroundColor: chartData.packageStatuses.colors,
+            borderWidth: 2,
+            borderColor: '#ffffff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true
+                }
+            }
+        }
+    }
+});
+
+// Graphique des revenus hebdomadaires (barres)
+const weeklyRevenueCtx = document.getElementById('weeklyRevenueChart').getContext('2d');
+const weeklyRevenueChart = new Chart(weeklyRevenueCtx, {
+    type: 'bar',
+    data: {
+        labels: chartData.weeklyRevenue.labels,
+        datasets: [{
+            label: 'Revenus (XOF)',
+            data: chartData.weeklyRevenue.data,
+            backgroundColor: colors.success + '80',
+            borderColor: colors.success,
+            borderWidth: 1,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: '#F3F4F6'
+                },
+                ticks: {
+                    callback: function(value) {
+                        return new Intl.NumberFormat('fr-FR').format(value) + ' XOF';
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return 'Revenus: ' + new Intl.NumberFormat('fr-FR').format(context.parsed.y) + ' XOF';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Initialiser avec le graphique des utilisateurs actif
+toggleChart('users');
+</script>
+
 @endsection

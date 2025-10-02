@@ -29,7 +29,7 @@
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('user_id') border-red-500 @enderror">
                     <option value="">Sélectionner un utilisateur</option>
                     @foreach($users as $user)
-                        <option value="{{ $user->id }}" {{ old('user_id') == $user->id ? 'selected' : '' }}>
+                        <option value="{{ $user->user_id }}" {{ old('user_id') == $user->user_id ? 'selected' : '' }}>
                             {{ $user->name }} ({{ $user->email }})
                         </option>
                     @endforeach
@@ -45,8 +45,8 @@
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('package_id') border-red-500 @enderror">
                     <option value="">Aucun colis</option>
                     @foreach($packages as $package)
-                        <option value="{{ $package->id }}" {{ old('package_id') == $package->id ? 'selected' : '' }}>
-                            {{ $package->tracking_number }} - {{ $package->origin_city }} → {{ $package->destination_city }}
+                        <option value="{{ $package->package_id }}" {{ old('package_id') == $package->package_id ? 'selected' : '' }}>
+                            {{ $package->tracking_number }} - {{ $package->pickup_city }} → {{ $package->delivery_city }}
                         </option>
                     @endforeach
                 </select>
@@ -73,12 +73,10 @@
                 <select name="category" id="category" required 
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('category') border-red-500 @enderror">
                     <option value="">Sélectionner une catégorie</option>
-                    <option value="general" {{ old('category') == 'general' ? 'selected' : '' }}>Général</option>
-                    <option value="package" {{ old('category') == 'package' ? 'selected' : '' }}>Colis</option>
-                    <option value="payment" {{ old('category') == 'payment' ? 'selected' : '' }}>Paiement</option>
-                    <option value="delivery" {{ old('category') == 'delivery' ? 'selected' : '' }}>Livraison</option>
-                    <option value="account" {{ old('category') == 'account' ? 'selected' : '' }}>Compte</option>
-                    <option value="technical" {{ old('category') == 'technical' ? 'selected' : '' }}>Technique</option>
+                    <option value="delivery_issue" {{ old('category') == 'delivery_issue' ? 'selected' : '' }}>Problème de livraison</option>
+                    <option value="payment_issue" {{ old('category') == 'payment_issue' ? 'selected' : '' }}>Problème de paiement</option>
+                    <option value="account_issue" {{ old('category') == 'account_issue' ? 'selected' : '' }}>Problème de compte</option>
+                    <option value="technical_issue" {{ old('category') == 'technical_issue' ? 'selected' : '' }}>Problème technique</option>
                     <option value="other" {{ old('category') == 'other' ? 'selected' : '' }}>Autre</option>
                 </select>
                 @error('category')
@@ -121,7 +119,7 @@
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('assigned_to') border-red-500 @enderror">
                     <option value="">Non assigné</option>
                     @foreach($admins as $admin)
-                        <option value="{{ $admin->id }}" {{ old('assigned_to') == $admin->id ? 'selected' : '' }}>
+                        <option value="{{ $admin->user_id }}" {{ old('assigned_to') == $admin->user_id ? 'selected' : '' }}>
                             {{ $admin->name }}
                         </option>
                     @endforeach

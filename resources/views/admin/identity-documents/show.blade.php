@@ -46,7 +46,7 @@
                                                 {{ $document->expiry_date->format('d/m/Y') }}
                                             </span>
                                             @if($document->isExpired())
-                                                <span class="badge bg-danger ms-2">Expiré</span>
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 ml-2">Expiré</span>
                                             @elseif($document->expiry_date->diffInDays() < 30)
                                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 ml-2">Expire bientôt</span>
                                             @endif
@@ -155,8 +155,13 @@
                         </div>
                     @endif
                     
-                    <h4 class="text-lg font-medium text-gray-900">{{ $document->user->name }}</h4>
+                    @if($document->user)
+                    <h4 class="text-lg font-medium text-gray-900">{{ $document->user->first_name }} {{ $document->user->last_name }}</h4>
                     <p class="text-gray-500 mb-4">{{ $document->user->email }}</p>
+                @else
+                    <h4 class="text-lg font-medium text-gray-900">Unknown User</h4>
+                    <p class="text-gray-500 mb-4">No email available</p>
+                @endif
                     
                     <div class="grid grid-cols-2 gap-4 text-center">
                         <div class="border-r border-gray-200">
@@ -186,53 +191,51 @@
     </div>
 
     <!-- Photos du document -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title mb-0"><i class="fas fa-images"></i> Photos du Document</h4>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <!-- Photo recto -->
-                        <div class="col-md-6">
-                            <h6>Recto</h6>
-                            @if($document->document_photo)
-                                <div class="text-center">
-                                    <img src="{{ asset('storage/' . $document->document_photo) }}" alt="Document recto" class="img-fluid border rounded" style="max-height: 300px;">
-                                    <div class="mt-2">
-                                        <a href="{{ route('admin.identity-documents.download-photo', [$document->document_id, 'front']) }}" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-download"></i> Télécharger
-                                        </a>
-                                    </div>
+    <div class="mt-6">
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900"><i class="fas fa-images mr-2"></i>Photos du Document</h3>
+            </div>
+            <div class="px-6 py-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Photo recto -->
+                    <div>
+                        <h4 class="text-base font-medium text-gray-900 mb-3">Recto</h4>
+                        @if($document->document_photo)
+                            <div class="text-center">
+                                <img src="{{ asset('storage/' . $document->document_photo) }}" alt="Document recto" class="max-w-full h-auto border border-gray-300 rounded-lg" style="max-height: 300px;">
+                                <div class="mt-3">
+                                    <a href="{{ route('admin.identity-documents.download-photo', [$document->document_id, 'front']) }}" class="border border-blue-300 text-blue-700 hover:bg-blue-50 px-3 py-1 rounded text-sm">
+                                        <i class="fas fa-download mr-1"></i>Télécharger
+                                    </a>
                                 </div>
-                            @else
-                                <div class="text-center text-muted py-5">
-                                    <i class="fas fa-image fa-3x mb-3"></i>
-                                    <p>Aucune photo recto disponible</p>
-                                </div>
-                            @endif
-                        </div>
+                            </div>
+                        @else
+                            <div class="text-center text-gray-500 py-12">
+                                <i class="fas fa-image text-4xl mb-3"></i>
+                                <p>Aucune photo recto disponible</p>
+                            </div>
+                        @endif
+                    </div>
 
-                        <!-- Photo verso -->
-                        <div class="col-md-6">
-                            <h6>Verso</h6>
-                            @if($document->document_photo_back)
-                                <div class="text-center">
-                                    <img src="{{ asset('storage/' . $document->document_photo_back) }}" alt="Document verso" class="img-fluid border rounded" style="max-height: 300px;">
-                                    <div class="mt-2">
-                                        <a href="{{ route('admin.identity-documents.download-photo', [$document->document_id, 'back']) }}" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-download"></i> Télécharger
-                                        </a>
-                                    </div>
+                    <!-- Photo verso -->
+                    <div>
+                        <h4 class="text-base font-medium text-gray-900 mb-3">Verso</h4>
+                        @if($document->document_photo_back)
+                            <div class="text-center">
+                                <img src="{{ asset('storage/' . $document->document_photo_back) }}" alt="Document verso" class="max-w-full h-auto border border-gray-300 rounded-lg" style="max-height: 300px;">
+                                <div class="mt-3">
+                                    <a href="{{ route('admin.identity-documents.download-photo', [$document->document_id, 'back']) }}" class="border border-blue-300 text-blue-700 hover:bg-blue-50 px-3 py-1 rounded text-sm">
+                                        <i class="fas fa-download mr-1"></i>Télécharger
+                                    </a>
                                 </div>
-                            @else
-                                <div class="text-center text-muted py-5">
-                                    <i class="fas fa-image fa-3x mb-3"></i>
-                                    <p>Aucune photo verso disponible</p>
-                                </div>
-                            @endif
-                        </div>
+                            </div>
+                        @else
+                            <div class="text-center text-gray-500 py-12">
+                                <i class="fas fa-image text-4xl mb-3"></i>
+                                <p>Aucune photo verso disponible</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -242,67 +245,116 @@
 
 <!-- Modal de vérification -->
 @if($document->verification_status === 'pending')
-    <div class="modal fade" id="verifyModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Vérifier le document</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div id="verifyModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Vérifier le document</h3>
+                    <button type="button" class="text-gray-400 hover:text-gray-600" onclick="closeModal('verifyModal')">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
                 <form action="{{ route('admin.identity-documents.verify', $document->document_id) }}" method="POST">
                     @csrf
                     @method('PATCH')
                     <input type="hidden" name="action" value="verify">
-                    <div class="modal-body">
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle"></i>
-                            Vous êtes sur le point de vérifier ce document d'identité. Cette action confirmera que le document est authentique et valide.
+                    <div class="mb-4">
+                        <div class="bg-green-50 border border-green-200 rounded-md p-4">
+                            <div class="flex">
+                                <i class="fas fa-check-circle text-green-400 mr-2 mt-1"></i>
+                                <p class="text-sm text-green-700">
+                                    Vous êtes sur le point de vérifier ce document d'identité. Cette action confirmera que le document est authentique et valide.
+                                </p>
+                            </div>
                         </div>
-                        <p><strong>Utilisateur:</strong> {{ $document->user->name }}</p>
-                        <p><strong>Type:</strong> {{ $document->document_type_label }}</p>
-                        <p><strong>Numéro:</strong> {{ $document->document_number }}</p>
+                        <div class="mt-4 space-y-2">
+                            <p class="text-sm"><span class="font-medium">Utilisateur:</span> 
+                            @if($document->user)
+                                {{ $document->user->first_name }} {{ $document->user->last_name }}
+                            @else
+                                Unknown User
+                            @endif
+                        </p>
+                            <p class="text-sm"><span class="font-medium">Type:</span> {{ $document->document_type_label }}</p>
+                            <p class="text-sm"><span class="font-medium">Numéro:</span> {{ $document->document_number }}</p>
+                        </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-success">Vérifier le document</button>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm" onclick="closeModal('verifyModal')">Annuler</button>
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm">Vérifier le document</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="rejectModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Rejeter le document</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div id="rejectModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Rejeter le document</h3>
+                    <button type="button" class="text-gray-400 hover:text-gray-600" onclick="closeModal('rejectModal')">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
                 <form action="{{ route('admin.identity-documents.verify', $document->document_id) }}" method="POST">
                     @csrf
                     @method('PATCH')
                     <input type="hidden" name="action" value="reject">
-                    <div class="modal-body">
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            Vous êtes sur le point de rejeter ce document d'identité. Veuillez expliquer la raison du rejet.
+                    <div class="mb-4">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                            <div class="flex">
+                                <i class="fas fa-exclamation-triangle text-yellow-400 mr-2 mt-1"></i>
+                                <p class="text-sm text-yellow-700">
+                                    Vous êtes sur le point de rejeter ce document d'identité. Veuillez expliquer la raison du rejet.
+                                </p>
+                            </div>
                         </div>
-                        <p><strong>Utilisateur:</strong> {{ $document->user->name }}</p>
-                        <p><strong>Type:</strong> {{ $document->document_type_label }}</p>
-                        <p><strong>Numéro:</strong> {{ $document->document_number }}</p>
+                        <div class="mt-4 space-y-2">
+                            <p class="text-sm"><span class="font-medium">Utilisateur:</span> 
+                            @if($document->user)
+                                {{ $document->user->first_name }} {{ $document->user->last_name }}
+                            @else
+                                Unknown User
+                            @endif
+                        </p>
+                            <p class="text-sm"><span class="font-medium">Type:</span> {{ $document->document_type_label }}</p>
+                            <p class="text-sm"><span class="font-medium">Numéro:</span> {{ $document->document_number }}</p>
+                        </div>
                         
-                        <div class="mb-3">
-                            <label for="rejection_reason" class="form-label">Raison du rejet <span class="text-danger">*</span></label>
-                            <textarea class="form-control" name="rejection_reason" id="rejection_reason" rows="4" placeholder="Expliquez pourquoi ce document est rejeté..." required></textarea>
+                        <div class="mt-4">
+                            <label for="rejection_reason" class="block text-sm font-medium text-gray-700 mb-2">Raison du rejet <span class="text-red-500">*</span></label>
+                            <textarea class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" name="rejection_reason" id="rejection_reason" rows="4" placeholder="Expliquez pourquoi ce document est rejeté..." required></textarea>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-danger">Rejeter le document</button>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm" onclick="closeModal('rejectModal')">Annuler</button>
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm">Rejeter le document</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 @endif
+
+<script>
+function openModal(modalId) {
+    document.getElementById(modalId).classList.remove('hidden');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modals = ['verifyModal', 'rejectModal'];
+    modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal && event.target === modal) {
+            closeModal(modalId);
+        }
+    });
+});
+</script>
 @endsection

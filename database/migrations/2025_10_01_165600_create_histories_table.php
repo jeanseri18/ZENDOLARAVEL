@@ -12,8 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('histories', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->id('history_id');
+            $table->foreignId('package_id')->constrained('packages', 'package_id')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users', 'user_id')->onDelete('cascade');
+            $table->enum('action_type', ['created', 'updated', 'status_changed', 'assigned', 'delivered', 'canceled', 'payment_received', 'dispute_opened', 'dispute_resolved']);
+            $table->text('details')->nullable();
+            $table->timestamp('created_at')->useCurrent();
+            
+            $table->index(['package_id', 'created_at']);
+            $table->index(['user_id', 'action_type']);
+            $table->index('created_at');
         });
     }
 

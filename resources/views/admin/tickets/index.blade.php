@@ -170,13 +170,24 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 h-8 w-8">
-                                <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-                                    <span class="text-xs font-medium text-gray-700">{{ substr($ticket->user->name, 0, 1) }}</span>
-                                </div>
+                                @if($ticket->user)
+                                    <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                        <span class="text-xs font-medium text-gray-700">{{ substr($ticket->user->first_name, 0, 1) }}</span>
+                                    </div>
+                                @else
+                                    <div class="h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center">
+                                        <span class="text-xs font-medium text-gray-600">?</span>
+                                    </div>
+                                @endif
                             </div>
                             <div class="ml-3">
-                                <div class="text-sm font-medium text-gray-900">{{ $ticket->user->name }}</div>
-                                <div class="text-sm text-gray-500">{{ $ticket->user->email }}</div>
+                                @if($ticket->user)
+                                    <div class="text-sm font-medium text-gray-900">{{ $ticket->user->first_name }} {{ $ticket->user->last_name }}</div>
+                                    <div class="text-sm text-gray-500">{{ $ticket->user->email }}</div>
+                                @else
+                                    <div class="text-sm font-medium text-gray-900">Unknown User</div>
+                                    <div class="text-sm text-gray-500">No email available</div>
+                                @endif
                             </div>
                         </div>
                     </td>
@@ -221,22 +232,22 @@
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        @if($ticket->assignedTo)
-                            <div class="text-sm font-medium text-gray-900">{{ $ticket->assignedTo->name }}</div>
+                        @if($ticket->assignedAdmin)
+                            <div class="text-sm font-medium text-gray-900">{{ $ticket->assignedAdmin->name }}</div>
                         @else
                             <span class="text-sm text-gray-400">Non assigné</span>
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div>{{ $ticket->created_at->format('d/m/Y H:i') }}</div>
+                        <div>{{ $ticket->created_at ? $ticket->created_at->format('d/m/Y H:i') : 'Date non disponible' }}</div>
                         @if($ticket->resolved_at)
-                            <div class="text-xs text-green-600">Résolu: {{ $ticket->resolved_at->format('d/m/Y') }}</div>
+                            <div class="text-xs text-green-600">Résolu: {{ $ticket->resolved_at ? $ticket->resolved_at->format('d/m/Y') : 'Date non disponible' }}</div>
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div class="flex space-x-2">
-                            <a href="{{ route('admin.support-tickets.show', $ticket) }}" class="text-blue-600 hover:text-blue-900">Voir</a>
-                            <a href="{{ route('admin.support-tickets.edit', $ticket) }}" class="text-indigo-600 hover:text-indigo-900">Modifier</a>
+                            <a href="{{ route('admin.support-tickets.show', $ticket->ticket_id) }}" class="text-blue-600 hover:text-blue-900">Voir</a>
+                                                <a href="{{ route('admin.support-tickets.edit', $ticket->ticket_id) }}" class="text-indigo-600 hover:text-indigo-900">Modifier</a>
                             
                             @if($ticket->status !== 'closed')
                                 <!-- Quick Actions Dropdown -->
@@ -247,7 +258,7 @@
                                     <div id="actions-{{ $ticket->id }}" class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5">
                                         <div class="py-1">
                                             @if($ticket->status === 'open')
-                                            <form method="POST" action="{{ route('admin.support-tickets.update-status', $ticket) }}" class="block">
+                                            <form method="POST" action="{{ route('admin.support-tickets.update-status', $ticket->ticket_id) }}" class="block">
                                                 @csrf
                                                 @method('PATCH')
                                                 <input type="hidden" name="status" value="in_progress">
@@ -269,14 +280,14 @@
                                                 <input type="hidden" name="status" value="closed">
                                                 <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Fermer</button>
                                             </form>
-                                            <form method="POST" action="{{ route('admin.support-tickets.reopen', $ticket) }}" class="block">
+                                            <form method="POST" action="{{ route('admin.support-tickets.reopen', $ticket->ticket_id) }}" class="block">
                                                 @csrf
                                                 @method('PATCH')
                                                 <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-gray-100">Rouvrir</button>
                                             </form>
                                             @endif
                                             @if(!$ticket->assigned_to)
-                                            <form method="POST" action="{{ route('admin.support-tickets.assign', $ticket) }}" class="block">
+                                            <form method="POST" action="{{ route('admin.support-tickets.assign', $ticket->ticket_id) }}" class="block">
                                                 @csrf
                                                 @method('PATCH')
                                                 <input type="hidden" name="assigned_to" value="{{ auth()->id() }}">
@@ -289,7 +300,7 @@
                             @endif
                             
                             @if($ticket->status === 'closed')
-                                <form method="POST" action="{{ route('admin.support-tickets.destroy', $ticket) }}" class="inline" 
+                                <form method="POST" action="{{ route('admin.support-tickets.destroy', $ticket->ticket_id) }}" class="inline" 
                                       onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce ticket ?')">
                                     @csrf
                                     @method('DELETE')

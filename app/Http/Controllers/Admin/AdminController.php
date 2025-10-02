@@ -26,21 +26,91 @@ class AdminController extends Controller
     public function dashboard()
     {
         $stats = [
-            'total_users' => User::count(),
-            'total_packages' => Package::count(),
-            'total_travelers' => Traveler::count(),
-            'total_transactions' => Transaction::count(),
-            'pending_tickets' => SupportTicket::where('status', 'open')->count(),
-            'active_packages' => Package::where('status', 'active')->count(),
-            'completed_deliveries' => Package::where('status', 'delivered')->count(),
-            'total_revenue' => Transaction::where('transaction_status', 'completed')->sum('amount'),
+            'users' => User::count(),
+            'packages' => Package::count(),
+            'travelers' => Traveler::count(),
+            'transactions' => Transaction::count(),
+            'tickets' => SupportTicket::where('status', 'open')->count(),
+            'revenue' => Transaction::where('transaction_status', 'completed')->sum('amount'),
         ];
 
-        $recent_users = User::latest()->take(5)->get();
-        $recent_packages = Package::with('sender')->latest()->take(5)->get();
-        $recent_tickets = SupportTicket::with('user')->where('status', 'open')->latest()->take(5)->get();
+        // Données pour les graphiques
+        $chartData = $this->getChartData();
 
-        return view('admin.dashboard', compact('stats', 'recent_users', 'recent_packages', 'recent_tickets'));
+        $recentUsers = User::latest()->take(5)->get();
+        $recentPackages = Package::with('sender')->latest()->take(5)->get();
+        $recentTickets = SupportTicket::with('user')->where('status', 'open')->latest()->take(5)->get();
+
+        return view('admin.dashboard', compact('stats', 'chartData', 'recentUsers', 'recentPackages', 'recentTickets'));
+    }
+
+    /**
+     * Get chart data for dashboard.
+     */
+    private function getChartData()
+    {
+        // Données mensuelles pour les 6 derniers mois
+        $monthlyData = [];
+        $months = [];
+        $usersData = [];
+        $packagesData = [];
+        $revenueData = [];
+        
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $months[] = $date->format('M Y');
+            
+            $usersData[] = User::whereMonth('created_at', $date->month)
+                              ->whereYear('created_at', $date->year)
+                              ->count();
+                              
+            $packagesData[] = Package::whereMonth('created_at', $date->month)
+                                   ->whereYear('created_at', $date->year)
+                                   ->count();
+                                   
+            $revenueData[] = Transaction::whereMonth('created_at', $date->month)
+                                      ->whereYear('created_at', $date->year)
+                                      ->where('transaction_status', 'completed')
+                                      ->sum('amount');
+        }
+
+        // Statuts des colis pour graphique en secteurs
+        $packageStatuses = [
+            'pending' => Package::where('status', 'pending')->count(),
+            'in_transit' => Package::where('status', 'in_transit')->count(),
+            'delivered' => Package::where('status', 'delivered')->count(),
+            'cancelled' => Package::where('status', 'cancelled')->count(),
+        ];
+
+        // Évolution des revenus par semaine (4 dernières semaines)
+        $weeklyRevenue = [];
+        $weeks = [];
+        for ($i = 3; $i >= 0; $i--) {
+            $startOfWeek = now()->subWeeks($i)->startOfWeek();
+            $endOfWeek = now()->subWeeks($i)->endOfWeek();
+            $weeks[] = 'Sem ' . ($i + 1);
+            $weeklyRevenue[] = Transaction::whereBetween('created_at', [$startOfWeek, $endOfWeek])
+                                        ->where('transaction_status', 'completed')
+                                        ->sum('amount');
+        }
+
+        return [
+            'monthly' => [
+                'labels' => $months,
+                'users' => $usersData,
+                'packages' => $packagesData,
+                'revenue' => $revenueData,
+            ],
+            'packageStatuses' => [
+                'labels' => ['En attente', 'En transit', 'Livré', 'Annulé'],
+                'data' => array_values($packageStatuses),
+                'colors' => ['#FCD34D', '#60A5FA', '#34D399', '#F87171'],
+            ],
+            'weeklyRevenue' => [
+                'labels' => $weeks,
+                'data' => $weeklyRevenue,
+            ],
+        ];
     }
 
     /**

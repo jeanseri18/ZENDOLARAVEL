@@ -93,11 +93,19 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the user's transactions.
+     * Get the user's transactions as sender.
      */
     public function transactions()
     {
-        return $this->hasMany(Transaction::class, 'user_id', 'user_id');
+        return $this->hasMany(Transaction::class, 'sender_id', 'user_id');
+    }
+
+    /**
+     * Get the user's transactions as traveler.
+     */
+    public function travelerTransactions()
+    {
+        return $this->hasMany(Transaction::class, 'traveler_id', 'user_id');
     }
 
     /**

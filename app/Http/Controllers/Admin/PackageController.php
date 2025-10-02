@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Package;
 use App\Models\User;
 use App\Models\Traveler;
+use App\Services\DeliveryTypeService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PackageController extends Controller
 {
@@ -20,17 +22,17 @@ class PackageController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Package::with(['sender', 'receiver', 'traveler']);
+        $query = Package::with(['sender', 'traveler']);
 
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('origin_city', 'like', "%{$search}%")
-                  ->orWhere('destination_city', 'like', "%{$search}%")
-                  ->orWhere('tracking_number', 'like', "%{$search}%");
+                $q->where('package_description', 'like', "%{$search}%")
+                  ->orWhere('pickup_city', 'like', "%{$search}%")
+                  ->orWhere('delivery_city', 'like', "%{$search}%")
+                  ->orWhere('tracking_number', 'like', "%{$search}%")
+                  ->orWhere('recipient_name', 'like', "%{$search}%");
             });
         }
 
@@ -82,37 +84,50 @@ class PackageController extends Controller
     {
         $request->validate([
             'sender_id' => 'required|exists:users,user_id',
-            'receiver_id' => 'required|exists:users,user_id',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category' => 'required|string|max:100',
-            'weight_kg' => 'required|numeric|min:0.1|max:50',
-            'dimensions' => 'nullable|string|max:255',
-            'value_euros' => 'required|numeric|min:0',
-            'origin_city' => 'required|string|max:255',
-            'destination_city' => 'required|string|max:255',
-            'pickup_date' => 'required|date|after:today',
-            'delivery_deadline' => 'required|date|after:pickup_date',
-            'priority' => 'required|in:normal,urgent,express',
+            'recipient_name' => 'required|string|max:100',
+            'recipient_phone' => 'required|string|max:15',
+            'recipient_email' => 'nullable|email|max:100',
+            'recipient_address' => 'required|string',
+            'package_description' => 'required|string',
+            'category' => 'required|in:documents,electronics,clothing,food,medicine,fragile,other',
+            'weight' => 'required|numeric|min:0.01|max:999.99',
+            'declared_value' => 'nullable|numeric|min:0',
+            'pickup_address' => 'required|string',
+            'delivery_address' => 'required|string',
+            'pickup_city' => 'required|string|max:50',
+            'delivery_city' => 'required|string|max:50',
+            'priority' => 'required|in:standard,express,urgent',
+            'delivery_type' => 'nullable|in:urban,intercity,international',
             'requires_signature' => 'boolean',
             'fragile' => 'boolean',
             'special_instructions' => 'nullable|string',
         ]);
 
+        // Determine delivery type automatically if not provided
+        $deliveryType = $request->delivery_type;
+        if (!$deliveryType) {
+            $deliveryType = DeliveryTypeService::determineDeliveryType(
+                $request->pickup_city,
+                $request->delivery_city
+            );
+        }
+
         $package = Package::create([
             'sender_id' => $request->sender_id,
-            'receiver_id' => $request->receiver_id,
-            'title' => $request->title,
-            'description' => $request->description,
+            'recipient_name' => $request->recipient_name,
+            'recipient_phone' => $request->recipient_phone,
+            'recipient_email' => $request->recipient_email,
+            'recipient_address' => $request->recipient_address,
+            'package_description' => $request->package_description,
             'category' => $request->category,
-            'weight_kg' => $request->weight_kg,
-            'dimensions' => $request->dimensions,
-            'value_euros' => $request->value_euros,
-            'origin_city' => $request->origin_city,
-            'destination_city' => $request->destination_city,
-            'pickup_date' => $request->pickup_date,
-            'delivery_deadline' => $request->delivery_deadline,
+            'weight' => $request->weight,
+            'declared_value' => $request->declared_value ?? 0,
+            'pickup_address' => $request->pickup_address,
+            'delivery_address' => $request->delivery_address,
+            'pickup_city' => $request->pickup_city,
+            'delivery_city' => $request->delivery_city,
             'priority' => $request->priority,
+            'delivery_type' => $deliveryType,
             'requires_signature' => $request->boolean('requires_signature'),
             'fragile' => $request->boolean('fragile'),
             'special_instructions' => $request->special_instructions,
@@ -127,8 +142,9 @@ class PackageController extends Controller
     /**
      * Display the specified package.
      */
-    public function show(Package $package)
+    public function show($packageId)
     {
+        $package = Package::where('package_id', $packageId)->firstOrFail();
         $package->load(['sender', 'receiver', 'traveler', 'transactions', 'proposals', 'messages']);
         
         return view('admin.packages.show', compact('package'));
@@ -137,8 +153,9 @@ class PackageController extends Controller
     /**
      * Show the form for editing the specified package.
      */
-    public function edit(Package $package)
+    public function edit($packageId)
     {
+        $package = Package::where('package_id', $packageId)->firstOrFail();
         $users = User::where('is_active', true)->get();
         $travelers = Traveler::with('user')->whereHas('user', function($q) {
             $q->where('is_active', true);
@@ -150,43 +167,64 @@ class PackageController extends Controller
     /**
      * Update the specified package in storage.
      */
-    public function update(Request $request, Package $package)
+    public function update(Request $request, $packageId)
     {
+        $package = Package::where('package_id', $packageId)->firstOrFail();
+        
         $request->validate([
             'sender_id' => 'required|exists:users,user_id',
-            'receiver_id' => 'required|exists:users,user_id',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category' => 'required|string|max:100',
-            'weight_kg' => 'required|numeric|min:0.1|max:50',
-            'dimensions' => 'nullable|string|max:255',
-            'value_euros' => 'required|numeric|min:0',
-            'origin_city' => 'required|string|max:255',
-            'destination_city' => 'required|string|max:255',
-            'pickup_date' => 'required|date',
-            'delivery_deadline' => 'required|date|after:pickup_date',
-            'priority' => 'required|in:normal,urgent,express',
-            'status' => 'required|in:pending,active,in_transit,delivered,cancelled',
+            'recipient_name' => 'required|string|max:100',
+            'recipient_phone' => 'required|string|max:15',
+            'recipient_email' => 'nullable|email|max:100',
+            'recipient_address' => 'required|string',
+            'package_description' => 'required|string',
+            'category' => 'required|in:documents,electronics,clothing,food,medicine,fragile,other',
+            'weight' => 'required|numeric|min:0.01|max:999.99',
+            'dimensions_length' => 'nullable|numeric|min:0|max:999.99',
+            'dimensions_width' => 'nullable|numeric|min:0|max:999.99',
+            'dimensions_height' => 'nullable|numeric|min:0|max:999.99',
+            'declared_value' => 'nullable|numeric|min:0',
+            'pickup_address' => 'required|string',
+            'delivery_address' => 'required|string',
+            'pickup_city' => 'required|string|max:50',
+            'delivery_city' => 'required|string|max:50',
+            'priority' => 'required|in:standard,express,urgent',
+            'status' => 'required|in:pending,accepted,picked_up,in_transit,arrived,out_for_delivery,delivered,cancelled,returned',
+            'delivery_type' => 'nullable|in:urban,intercity,international',
             'requires_signature' => 'boolean',
             'fragile' => 'boolean',
             'special_instructions' => 'nullable|string',
         ]);
 
+        // Determine delivery type automatically if not provided
+        $deliveryType = $request->delivery_type;
+        if (!$deliveryType) {
+            $deliveryType = DeliveryTypeService::determineDeliveryType(
+                $request->pickup_city,
+                $request->delivery_city
+            );
+        }
+
         $package->update([
             'sender_id' => $request->sender_id,
-            'receiver_id' => $request->receiver_id,
-            'title' => $request->title,
-            'description' => $request->description,
+            'recipient_name' => $request->recipient_name,
+            'recipient_phone' => $request->recipient_phone,
+            'recipient_email' => $request->recipient_email,
+            'recipient_address' => $request->recipient_address,
+            'package_description' => $request->package_description,
             'category' => $request->category,
-            'weight_kg' => $request->weight_kg,
-            'dimensions' => $request->dimensions,
-            'value_euros' => $request->value_euros,
-            'origin_city' => $request->origin_city,
-            'destination_city' => $request->destination_city,
-            'pickup_date' => $request->pickup_date,
-            'delivery_deadline' => $request->delivery_deadline,
+            'weight' => $request->weight,
+            'dimensions_length' => $request->dimensions_length,
+            'dimensions_width' => $request->dimensions_width,
+            'dimensions_height' => $request->dimensions_height,
+            'declared_value' => $request->declared_value ?? 0,
+            'pickup_address' => $request->pickup_address,
+            'delivery_address' => $request->delivery_address,
+            'pickup_city' => $request->pickup_city,
+            'delivery_city' => $request->delivery_city,
             'priority' => $request->priority,
             'status' => $request->status,
+            'delivery_type' => $deliveryType,
             'requires_signature' => $request->boolean('requires_signature'),
             'fragile' => $request->boolean('fragile'),
             'special_instructions' => $request->special_instructions,
@@ -199,8 +237,10 @@ class PackageController extends Controller
     /**
      * Remove the specified package from storage.
      */
-    public function destroy(Package $package)
+    public function destroy($packageId)
     {
+        $package = Package::where('package_id', $packageId)->firstOrFail();
+        
         // Prevent deletion of packages that are in transit or delivered
         if (in_array($package->status, ['in_transit', 'delivered'])) {
             return redirect()->route('admin.packages.index')
@@ -216,8 +256,10 @@ class PackageController extends Controller
     /**
      * Assign traveler to package.
      */
-    public function assignTraveler(Request $request, Package $package)
+    public function assignTraveler(Request $request, $packageId)
     {
+        $package = Package::where('package_id', $packageId)->firstOrFail();
+        
         $request->validate([
             'traveler_id' => 'required|exists:travelers,traveler_id',
         ]);
@@ -234,8 +276,10 @@ class PackageController extends Controller
     /**
      * Update package status.
      */
-    public function updateStatus(Request $request, Package $package)
+    public function updateStatus(Request $request, $packageId)
     {
+        $package = Package::where('package_id', $packageId)->firstOrFail();
+        
         $request->validate([
             'status' => 'required|in:pending,active,in_transit,delivered,cancelled',
         ]);
@@ -274,8 +318,8 @@ class PackageController extends Controller
             
             // CSV headers
             fputcsv($file, [
-                'ID', 'Numéro de suivi', 'Titre', 'Expéditeur', 'Destinataire', 
-                'Origine', 'Destination', 'Poids (kg)', 'Valeur (€)', 'Statut', 
+                'ID', 'Numéro de suivi', 'Description', 'Expéditeur', 'Destinataire', 
+                'Ville départ', 'Ville arrivée', 'Poids (kg)', 'Valeur déclarée (XOF)', 'Statut', 
                 'Priorité', 'Date création', 'Date livraison prévue'
             ]);
             
@@ -283,13 +327,13 @@ class PackageController extends Controller
                 fputcsv($file, [
                     $package->package_id,
                     $package->tracking_number,
-                    $package->title,
+                    $package->package_description,
                     $package->sender->first_name . ' ' . $package->sender->last_name,
-                    $package->receiver->first_name . ' ' . $package->receiver->last_name,
-                    $package->origin_city,
-                    $package->destination_city,
-                    $package->weight_kg,
-                    $package->value_euros,
+                    $package->recipient_name,
+                    $package->pickup_city,
+                    $package->delivery_city,
+                    $package->weight,
+                    $package->declared_value,
                     $package->status,
                     $package->priority,
                     $package->created_at->format('d/m/Y H:i'),

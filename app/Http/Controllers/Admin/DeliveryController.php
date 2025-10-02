@@ -91,7 +91,7 @@ class DeliveryController extends Controller
         $request->validate([
             'package_id' => 'required|exists:packages,package_id|unique:deliveries,package_id',
             'traveler_id' => 'nullable|exists:travelers,traveler_id',
-            'delivery_type' => 'required|in:urban,intercity,international',
+            'delivery_type' => 'nullable|in:urban,intercity,international',
             'pickup_location' => 'required|string|max:255',
             'delivery_location' => 'required|string|max:255',
             'start_time' => 'nullable|date',
@@ -102,6 +102,25 @@ class DeliveryController extends Controller
             'status' => 'required|in:to_pickup,in_transit,delivered,delayed,canceled'
         ]);
 
+        // Get package to determine delivery type automatically
+        $package = Package::find($request->package_id);
+        
+        // Use package delivery type or determine from locations
+        $deliveryType = $request->delivery_type;
+        if (!$deliveryType) {
+            if ($package && $package->delivery_type) {
+                $deliveryType = $package->delivery_type;
+            } else {
+                // Determine from pickup and delivery locations
+                $deliveryType = Traveler::determineDeliveryType(
+                    $request->pickup_location,
+                    $request->delivery_location
+                );
+            }
+        }
+        
+        $request->merge(['delivery_type' => $deliveryType]);
+
         // Set default commission fees based on delivery type
         if (!$request->filled('commission_fee')) {
             $commissionFees = [
@@ -109,7 +128,7 @@ class DeliveryController extends Controller
                 'intercity' => 1000,
                 'international' => 2000
             ];
-            $request->merge(['commission_fee' => $commissionFees[$request->delivery_type]]);
+            $request->merge(['commission_fee' => $commissionFees[$deliveryType]]);
         }
 
         $delivery = Delivery::create($request->all());
@@ -121,8 +140,10 @@ class DeliveryController extends Controller
     /**
      * Display the specified delivery.
      */
-    public function show(Delivery $delivery)
+    public function show($deliveryId)
     {
+        $delivery = Delivery::where('delivery_id', $deliveryId)->firstOrFail();
+        
         $delivery->load(['package.sender', 'package.receiver', 'traveler.user']);
         return view('admin.deliveries.show', compact('delivery'));
     }
@@ -130,8 +151,10 @@ class DeliveryController extends Controller
     /**
      * Show the form for editing the specified delivery.
      */
-    public function edit(Delivery $delivery)
+    public function edit($deliveryId)
     {
+        $delivery = Delivery::where('delivery_id', $deliveryId)->firstOrFail();
+        
         $packages = Package::with(['sender', 'receiver'])->get();
         $travelers = Traveler::with('user')
                            ->where('status', 'active')
@@ -147,8 +170,10 @@ class DeliveryController extends Controller
     /**
      * Update the specified delivery in storage.
      */
-    public function update(Request $request, Delivery $delivery)
+    public function update(Request $request, $deliveryId)
     {
+        $delivery = Delivery::where('delivery_id', $deliveryId)->firstOrFail();
+        
         $request->validate([
             'package_id' => 'required|exists:packages,package_id|unique:deliveries,package_id,' . $delivery->delivery_id . ',delivery_id',
             'traveler_id' => 'nullable|exists:travelers,traveler_id',
@@ -174,8 +199,10 @@ class DeliveryController extends Controller
     /**
      * Update delivery status.
      */
-    public function updateStatus(Request $request, Delivery $delivery)
+    public function updateStatus(Request $request, $deliveryId)
     {
+        $delivery = Delivery::where('delivery_id', $deliveryId)->firstOrFail();
+        
         $request->validate([
             'status' => 'required|in:to_pickup,in_transit,delivered,delayed,canceled'
         ]);
@@ -192,8 +219,10 @@ class DeliveryController extends Controller
     /**
      * Remove the specified delivery from storage.
      */
-    public function destroy(Delivery $delivery)
+    public function destroy($deliveryId)
     {
+        $delivery = Delivery::where('delivery_id', $deliveryId)->firstOrFail();
+        
         $delivery->delete();
 
         return redirect()->route('admin.deliveries.index')
@@ -257,7 +286,7 @@ class DeliveryController extends Controller
                     $delivery->status_label,
                     $delivery->package->sender->name ?? '',
                     $delivery->package->receiver->name ?? '',
-                    $delivery->traveler->user->name ?? 'Non assigné',
+                    ($delivery->traveler ? $delivery->traveler->user->first_name . ' ' . $delivery->traveler->user->last_name : 'Non assigné'),
                     $delivery->pickup_location,
                     $delivery->delivery_location,
                     $delivery->commission_fee,

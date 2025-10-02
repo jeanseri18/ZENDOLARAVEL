@@ -138,8 +138,9 @@ class TransactionController extends Controller
     /**
      * Display the specified transaction.
      */
-    public function show(Transaction $transaction)
+    public function show($transactionId)
     {
+        $transaction = Transaction::where('transaction_id', $transactionId)->firstOrFail();
         $transaction->load(['user', 'package.sender', 'package.receiver', 'promoCode']);
         
         return view('admin.transactions.show', compact('transaction'));
@@ -148,8 +149,9 @@ class TransactionController extends Controller
     /**
      * Show the form for editing the specified transaction.
      */
-    public function edit(Transaction $transaction)
+    public function edit($transactionId)
     {
+        $transaction = Transaction::where('transaction_id', $transactionId)->firstOrFail();
         $users = User::where('is_active', true)->get();
         $packages = Package::with(['sender', 'receiver'])->get();
         $promoCodes = PromoCode::active()->get();
@@ -160,8 +162,10 @@ class TransactionController extends Controller
     /**
      * Update the specified transaction in storage.
      */
-    public function update(Request $request, Transaction $transaction)
+    public function update(Request $request, $transactionId)
     {
+        $transaction = Transaction::where('transaction_id', $transactionId)->firstOrFail();
+        
         $request->validate([
             'sender_id' => 'required|exists:users,user_id',
             'package_id' => 'required|exists:packages,package_id',
@@ -198,8 +202,10 @@ class TransactionController extends Controller
     /**
      * Remove the specified transaction from storage.
      */
-    public function destroy(Transaction $transaction)
+    public function destroy($transactionId)
     {
+        $transaction = Transaction::where('transaction_id', $transactionId)->firstOrFail();
+        
         // Prevent deletion of completed transactions
         if ($transaction->status === 'completed') {
             return redirect()->route('admin.transactions.index')
@@ -215,8 +221,10 @@ class TransactionController extends Controller
     /**
      * Update transaction status.
      */
-    public function updateStatus(Request $request, Transaction $transaction)
+    public function updateStatus(Request $request, $transactionId)
     {
+        $transaction = Transaction::where('transaction_id', $transactionId)->firstOrFail();
+        
         $request->validate([
             'status' => 'required|in:pending,processing,completed,failed,cancelled,refunded',
             'notes' => 'nullable|string|max:500',
@@ -245,8 +253,10 @@ class TransactionController extends Controller
     /**
      * Process refund for transaction.
      */
-    public function refund(Request $request, Transaction $transaction)
+    public function refund(Request $request, $transactionId)
     {
+        $transaction = Transaction::where('transaction_id', $transactionId)->firstOrFail();
+        
         $request->validate([
             'refund_amount' => 'required|numeric|min:0.01|max:' . $transaction->amount,
             'refund_reason' => 'required|string|max:500',
@@ -268,7 +278,7 @@ class TransactionController extends Controller
         // Update original transaction status
         $transaction->update([
             'status' => 'refunded',
-            'description' => ($transaction->description ?? '') . "\n[" . now()->format('d/m/Y H:i') . "] Remboursé: " . $request->refund_amount . "€ - " . $request->refund_reason,
+            'description' => ($transaction->description ?? '') . "\n[" . now()->format('d/m/Y H:i') . "] Remboursé: " . $request->refund_amount . " XOF - " . $request->refund_reason,
         ]);
 
         return redirect()->back()
@@ -294,7 +304,7 @@ class TransactionController extends Controller
             
             // CSV headers
             fputcsv($file, [
-                'ID', 'Utilisateur', 'Colis', 'Montant (€)', 'Type', 'Méthode paiement', 
+                'ID', 'Utilisateur', 'Colis', 'Montant (XOF)', 'Type', 'Méthode paiement', 
                 'Statut', 'Code promo', 'Référence', 'Date création', 'Date traitement'
             ]);
             
@@ -302,7 +312,7 @@ class TransactionController extends Controller
                 fputcsv($file, [
                     $transaction->transaction_id,
                     $transaction->user->first_name . ' ' . $transaction->user->last_name,
-                    $transaction->package ? $transaction->package->title : 'N/A',
+                    $transaction->package ? $transaction->package->package_description : 'N/A',
                     number_format($transaction->amount, 2),
                     $transaction->transaction_type,
                     $transaction->payment_method,

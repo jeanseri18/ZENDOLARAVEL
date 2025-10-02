@@ -76,15 +76,15 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'phone_number' => 'nullable|string|max:20',
+            'first_name' => 'required|string|max:50',
+            'last_name' => 'required|string|max:50',
+            'email' => 'nullable|string|email|max:100|unique:users',
+            'phone_number' => 'required|string|max:20|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:user,traveler,admin',
-            'city' => 'nullable|string|max:255',
-            'country' => 'nullable|string|max:255',
-            'bio' => 'nullable|string|max:1000',
+            'role' => 'required|in:expeditor,traveler,both',
+            'city' => 'nullable|string|max:50',
+            'country' => 'nullable|string|max:50',
+            'bio' => 'nullable|string',
         ]);
 
         $user = User::create([
@@ -118,8 +118,9 @@ class UserController extends Controller
     /**
      * Display the specified user.
      */
-    public function show(User $user)
+    public function show($userId)
     {
+        $user = User::where('user_id', $userId)->firstOrFail();
         $user->load(['profile', 'packages', 'transactions', 'supportTickets']);
         
         return view('admin.users.show', compact('user'));
@@ -128,25 +129,28 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified user.
      */
-    public function edit(User $user)
+    public function edit($userId)
     {
+        $user = User::where('user_id', $userId)->firstOrFail();
         return view('admin.users.edit', compact('user'));
     }
 
     /**
      * Update the specified user in storage.
      */
-    public function update(Request $request, User $user)
+    public function update(Request $request, $userId)
     {
+        $user = User::where('user_id', $userId)->firstOrFail();
+        
         $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->user_id, 'user_id')],
-            'phone_number' => 'nullable|string|max:20',
-            'role' => 'required|in:user,traveler,admin',
-            'city' => 'nullable|string|max:255',
-            'country' => 'nullable|string|max:255',
-            'bio' => 'nullable|string|max:1000',
+            'first_name' => 'required|string|max:50',
+            'last_name' => 'required|string|max:50',
+            'email' => ['nullable', 'string', 'email', 'max:100', Rule::unique('users')->ignore($user->user_id, 'user_id')],
+            'phone_number' => ['required', 'string', 'max:20', Rule::unique('users')->ignore($user->user_id, 'user_id')],
+            'role' => 'required|in:expeditor,traveler,both',
+            'city' => 'nullable|string|max:50',
+            'country' => 'nullable|string|max:50',
+            'bio' => 'nullable|string',
             'is_active' => 'boolean',
             'is_verified' => 'boolean',
         ]);
@@ -182,8 +186,10 @@ class UserController extends Controller
     /**
      * Remove the specified user from storage.
      */
-    public function destroy(User $user)
+    public function destroy($userId)
     {
+        $user = User::where('user_id', $userId)->firstOrFail();
+        
         // Prevent deletion of admin users
         if ($user->role === 'admin') {
             return redirect()->route('admin.users.index')
@@ -199,8 +205,10 @@ class UserController extends Controller
     /**
      * Toggle user active status.
      */
-    public function toggleStatus(User $user)
+    public function toggleStatus($userId)
     {
+        $user = User::where('user_id', $userId)->firstOrFail();
+        
         $user->update([
             'is_active' => !$user->is_active,
         ]);
@@ -214,8 +222,10 @@ class UserController extends Controller
     /**
      * Toggle user verification status.
      */
-    public function toggleVerification(User $user)
+    public function toggleVerification($userId)
     {
+        $user = User::where('user_id', $userId)->firstOrFail();
+        
         $user->update([
             'is_verified' => !$user->is_verified,
         ]);

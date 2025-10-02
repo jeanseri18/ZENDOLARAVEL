@@ -10,7 +10,7 @@
             <p class="text-gray-600">Modifier les détails du ticket de support</p>
         </div>
         <div class="flex space-x-3">
-            <a href="{{ route('admin.support-tickets.show', $ticket) }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <a href="{{ route('admin.support-tickets.show', $ticket->ticket_id) }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
                 Voir le ticket
             </a>
             <a href="{{ route('admin.support-tickets.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
@@ -21,7 +21,7 @@
 </div>
 
 <div class="bg-white rounded-lg shadow">
-    <form method="POST" action="{{ route('admin.support-tickets.update', $ticket) }}" class="p-6">
+    <form method="POST" action="{{ route('admin.support-tickets.update', $ticket->ticket_id) }}" class="p-6">
         @csrf
         @method('PUT')
         
@@ -34,11 +34,15 @@
                 </div>
                 <div>
                     <span class="font-medium text-gray-700">Créé le:</span>
-                    <span class="text-gray-900">{{ $ticket->created_at->format('d/m/Y à H:i') }}</span>
+                    <span class="text-gray-900">{{ $ticket->created_at ? $ticket->created_at->format('d/m/Y à H:i') : 'Date non disponible' }}</span>
                 </div>
                 <div>
                     <span class="font-medium text-gray-700">Utilisateur:</span>
-                    <span class="text-gray-900">{{ $ticket->user->name }}</span>
+                    @if($ticket->user)
+                        <span class="text-gray-900">{{ $ticket->user->first_name }} {{ $ticket->user->last_name }}</span>
+                    @else
+                        <span class="text-gray-900">Unknown User</span>
+                    @endif
                 </div>
             </div>
         </div>
@@ -61,8 +65,8 @@
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('package_id') border-red-500 @enderror">
                     <option value="">Aucun colis</option>
                     @foreach($packages as $package)
-                        <option value="{{ $package->id }}" {{ old('package_id', $ticket->package_id) == $package->id ? 'selected' : '' }}>
-                            {{ $package->tracking_number }} - {{ $package->origin_city }} → {{ $package->destination_city }}
+                        <option value="{{ $package->package_id }}" {{ old('package_id', $ticket->package_id) == $package->package_id ? 'selected' : '' }}>
+                            {{ $package->tracking_number }} - {{ $package->pickup_city }} → {{ $package->delivery_city }}
                         </option>
                     @endforeach
                 </select>
@@ -79,12 +83,10 @@
                 <select name="category" id="category" required 
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('category') border-red-500 @enderror">
                     <option value="">Sélectionner une catégorie</option>
-                    <option value="general" {{ old('category', $ticket->category) == 'general' ? 'selected' : '' }}>Général</option>
-                    <option value="package" {{ old('category', $ticket->category) == 'package' ? 'selected' : '' }}>Colis</option>
-                    <option value="payment" {{ old('category', $ticket->category) == 'payment' ? 'selected' : '' }}>Paiement</option>
-                    <option value="delivery" {{ old('category', $ticket->category) == 'delivery' ? 'selected' : '' }}>Livraison</option>
-                    <option value="account" {{ old('category', $ticket->category) == 'account' ? 'selected' : '' }}>Compte</option>
-                    <option value="technical" {{ old('category', $ticket->category) == 'technical' ? 'selected' : '' }}>Technique</option>
+                    <option value="delivery_issue" {{ old('category', $ticket->category) == 'delivery_issue' ? 'selected' : '' }}>Problème de livraison</option>
+                    <option value="payment_issue" {{ old('category', $ticket->category) == 'payment_issue' ? 'selected' : '' }}>Problème de paiement</option>
+                    <option value="account_issue" {{ old('category', $ticket->category) == 'account_issue' ? 'selected' : '' }}>Problème de compte</option>
+                    <option value="technical_issue" {{ old('category', $ticket->category) == 'technical_issue' ? 'selected' : '' }}>Problème technique</option>
                     <option value="other" {{ old('category', $ticket->category) == 'other' ? 'selected' : '' }}>Autre</option>
                 </select>
                 @error('category')
@@ -141,7 +143,7 @@
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('assigned_to') border-red-500 @enderror">
                     <option value="">Non assigné</option>
                     @foreach($admins as $admin)
-                        <option value="{{ $admin->id }}" {{ old('assigned_to', $ticket->assigned_to) == $admin->id ? 'selected' : '' }}>
+                        <option value="{{ $admin->user_id }}" {{ old('assigned_to', $ticket->assigned_to) == $admin->user_id ? 'selected' : '' }}>
                             {{ $admin->name }}
                         </option>
                     @endforeach
@@ -187,7 +189,7 @@
                 </svg>
                 <div>
                     <p class="text-sm font-medium text-green-800">Ticket résolu</p>
-                    <p class="text-sm text-green-700">Résolu le {{ $ticket->resolved_at->format('d/m/Y à H:i') }}</p>
+                    <p class="text-sm text-green-700">Résolu le {{ $ticket->resolved_at ? $ticket->resolved_at->format('d/m/Y à H:i') : 'Date non disponible' }}</p>
                 </div>
             </div>
         </div>
@@ -195,7 +197,7 @@
         
         <!-- Submit Buttons -->
         <div class="flex justify-end space-x-3">
-            <a href="{{ route('admin.support-tickets.show', $ticket) }}" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-lg text-sm font-medium">
+            <a href="{{ route('admin.support-tickets.show', $ticket->ticket_id) }}" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-lg text-sm font-medium">
                 Annuler
             </a>
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium">

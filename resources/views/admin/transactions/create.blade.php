@@ -51,7 +51,7 @@
                             <option value="">Aucun colis associé</option>
                             @foreach($packages as $package)
                                 <option value="{{ $package->id }}" {{ old('package_id') == $package->id ? 'selected' : '' }}>
-                                    {{ $package->tracking_number }} - {{ $package->origin_city }} → {{ $package->destination_city }}
+                                    {{ $package->tracking_number }} - {{ $package->pickup_city }} → {{ $package->delivery_city }}
                                 </option>
                             @endforeach
                         </select>
@@ -76,7 +76,7 @@
                     </div>
                     
                     <div>
-                        <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Montant (FCFA) *</label>
+                        <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Montant (XOF) *</label>
                         <input type="number" name="amount" id="amount" value="{{ old('amount') }}" required min="0" step="1"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('amount') border-red-500 @enderror">
                         @error('amount')
@@ -116,7 +116,7 @@
                             <option value="">Aucun code promo</option>
                             @foreach($promoCodes as $promoCode)
                                 <option value="{{ $promoCode->id }}" {{ old('promo_code_id') == $promoCode->id ? 'selected' : '' }}>
-                                    {{ $promoCode->code }} ({{ $promoCode->discount_type === 'percentage' ? $promoCode->discount_value . '%' : number_format($promoCode->discount_value, 0, ',', ' ') . ' FCFA' }})
+                                    {{ $promoCode->code }} ({{ $promoCode->discount_type === 'percentage' ? $promoCode->discount_value . '%' : number_format($promoCode->discount_value, 0, ',', ' ') . ' XOF' }})
                                 </option>
                             @endforeach
                         </select>
@@ -126,7 +126,7 @@
                     </div>
                     
                     <div>
-                        <label for="discount_amount" class="block text-sm font-medium text-gray-700 mb-1">Montant de la remise (FCFA)</label>
+                        <label for="discount_amount" class="block text-sm font-medium text-gray-700 mb-1">Montant de la remise (XOF)</label>
                         <input type="number" name="discount_amount" id="discount_amount" value="{{ old('discount_amount', 0) }}" min="0" step="1"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('discount_amount') border-red-500 @enderror">
                         @error('discount_amount')

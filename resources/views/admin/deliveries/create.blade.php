@@ -31,7 +31,7 @@
                                         @foreach($packages as $package)
                                             <option value="{{ $package->package_id }}" 
                                                     {{ old('package_id') == $package->package_id ? 'selected' : '' }}>
-                                                {{ $package->package_number }} - {{ Str::limit($package->description, 50) }}
+                                                {{ $package->package_number }} - {{ Str::limit($package->package_description, 50) }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -49,7 +49,11 @@
                                         @foreach($travelers as $traveler)
                                             <option value="{{ $traveler->traveler_id }}" 
                                                     {{ old('traveler_id') == $traveler->traveler_id ? 'selected' : '' }}>
-                                                {{ $traveler->user->name }} ({{ $traveler->vehicle_type }})
+                                                @if($traveler->user)
+                                                    {{ $traveler->user->first_name }} {{ $traveler->user->last_name }} ({{ $traveler->vehicle_type }})
+                                                @else
+                                                    Unknown User ({{ $traveler->vehicle_type }})
+                                                @endif
                                             </option>
                                         @endforeach
                                     </select>
@@ -154,7 +158,7 @@
                             </div>
                             <div>
                                 <div class="mb-4">
-                                    <label for="commission_fee" class="block text-sm font-medium text-gray-700 mb-2">Frais de Commission (FCFA)</label>
+                                    <label for="commission_fee" class="block text-sm font-medium text-gray-700 mb-2">Frais de Commission (XOF)</label>
                                     <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 @error('commission_fee') border-red-300 @enderror" 
                                            id="commission_fee" name="commission_fee" step="0.01" min="0"
                                            value="{{ old('commission_fee', '0.00') }}">
@@ -223,8 +227,8 @@
                         <h4 class="text-sm font-medium text-indigo-600 mb-3">Types de Livraison:</h4>
                         <ul class="space-y-2 text-sm text-gray-600">
                             <li><span class="font-medium">Urbaine:</span> Livraison dans la même ville</li>
-                            <li><span class="font-medium">Intercité:</span> Livraison entre villes (Frais: 1000 FCFA)</li>
-                            <li><span class="font-medium">Internationale:</span> Livraison internationale (Frais: 2000 FCFA)</li>
+                            <li><span class="font-medium">Intercité:</span> Livraison entre villes (Frais: 1000 XOF)</li>
+                            <li><span class="font-medium">Internationale:</span> Livraison internationale (Frais: 2000 XOF)</li>
                         </ul>
                     </div>
 

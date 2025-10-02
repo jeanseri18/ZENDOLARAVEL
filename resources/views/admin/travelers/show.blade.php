@@ -1,19 +1,23 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Détails du Livreur - ' . $traveler->name)
+@section('title', 'Détails du Livreur - ' . ($traveler->user ? $traveler->user->first_name . ' ' . $traveler->user->last_name : 'Unknown User'))
 
 @section('content')
 <div class="mb-6">
     <div class="flex justify-between items-center">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">{{ $traveler->name }}</h1>
+            @if($traveler->user)
+                <h1 class="text-2xl font-bold text-gray-900">{{ $traveler->user->first_name }} {{ $traveler->user->last_name }}</h1>
+            @else
+                <h1 class="text-2xl font-bold text-gray-900">Unknown User</h1>
+            @endif
             <p class="text-gray-600">Livreur depuis le {{ $traveler->created_at->format('d/m/Y') }}</p>
         </div>
         <div class="flex space-x-3">
             <a href="{{ route('admin.travelers.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
                 Retour à la liste
             </a>
-            <a href="{{ route('admin.travelers.edit', $traveler) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <a href="{{ route('admin.travelers.edit', $traveler->traveler_id) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
                 Modifier
             </a>
         </div>
@@ -31,19 +35,30 @@
             <div class="p-6">
                 <div class="flex items-center mb-6">
                     <div class="flex-shrink-0 h-20 w-20">
-                        @if($traveler->profile && $traveler->profile->avatar)
-                            <img class="h-20 w-20 rounded-full" src="{{ asset('storage/' . $traveler->profile->avatar) }}" alt="{{ $traveler->name }}">
+                        @if($traveler->user)
+                            @if($traveler->profile && $traveler->profile->avatar)
+                                <img class="h-20 w-20 rounded-full" src="{{ asset('storage/' . $traveler->profile->avatar) }}" alt="{{ $traveler->user->first_name }} {{ $traveler->user->last_name }}">
+                            @else
+                                <div class="h-20 w-20 rounded-full bg-gray-300 flex items-center justify-center">
+                                    <span class="text-2xl font-medium text-gray-700">{{ substr($traveler->user->first_name, 0, 1) }}</span>
+                                </div>
+                            @endif
                         @else
-                            <div class="h-20 w-20 rounded-full bg-gray-300 flex items-center justify-center">
-                                <span class="text-2xl font-medium text-gray-700">{{ substr($traveler->name, 0, 1) }}</span>
+                            <div class="h-20 w-20 rounded-full bg-gray-400 flex items-center justify-center">
+                                <span class="text-2xl font-medium text-gray-600">?</span>
                             </div>
                         @endif
                     </div>
                     <div class="ml-6">
-                        <h3 class="text-xl font-semibold text-gray-900">{{ $traveler->name }}</h3>
-                        <p class="text-gray-600">{{ $traveler->email }}</p>
-                        @if($traveler->phone)
-                            <p class="text-gray-600">{{ $traveler->phone }}</p>
+                        @if($traveler->user)
+                            <h3 class="text-xl font-semibold text-gray-900">{{ $traveler->user->first_name }} {{ $traveler->user->last_name }}</h3>
+                            <p class="text-gray-600">{{ $traveler->user->email }}</p>
+                            @if($traveler->user->phone_number)
+                                <p class="text-gray-600">{{ $traveler->user->phone_number }}</p>
+                            @endif
+                        @else
+                            <h3 class="text-xl font-semibold text-gray-900">Unknown User</h3>
+                            <p class="text-gray-600">No email available</p>
                         @endif
                     </div>
                 </div>
@@ -113,7 +128,7 @@
                                 </div>
                                 <div class="ml-4">
                                     <p class="text-sm font-medium text-gray-900">{{ $package->tracking_number }}</p>
-                                    <p class="text-sm text-gray-500">{{ $package->origin_city }} → {{ $package->destination_city }}</p>
+                                    <p class="text-sm text-gray-500">{{ $package->pickup_city }} → {{ $package->delivery_city }}</p>
                                     <p class="text-xs text-gray-400">{{ $package->created_at->format('d/m/Y H:i') }}</p>
                                 </div>
                             </div>
@@ -136,7 +151,7 @@
                                         @default {{ $package->status }}
                                     @endswitch
                                 </span>
-                                <span class="text-sm font-medium text-gray-900">{{ number_format($package->price, 0, ',', ' ') }} FCFA</span>
+                                <span class="text-sm font-medium text-gray-900">{{ number_format($package->final_delivery_fee ?? $package->estimated_delivery_fee ?? 0, 0, ',', ' ') }} XOF</span>
                             </div>
                         </div>
                         @endforeach
@@ -176,7 +191,7 @@
                         <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                             <div>
                                 <p class="text-sm font-medium text-gray-900">{{ $package->tracking_number }}</p>
-                                <p class="text-sm text-gray-500">{{ $package->origin_city }} → {{ $package->destination_city }}</p>
+                                <p class="text-sm text-gray-500">{{ $package->pickup_city }} → {{ $package->delivery_city }}</p>
                             </div>
                             <div class="text-right">
                                 <p class="text-sm text-green-600 font-medium">Livré</p>
@@ -287,7 +302,7 @@
                 </form>
                 
                 @if($traveler->packages_count == 0)
-                <form method="POST" action="{{ route('admin.travelers.destroy', $traveler) }}" 
+                <form method="POST" action="{{ route('admin.travelers.destroy', $traveler->traveler_id) }}" 
                       onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce livreur ? Cette action est irréversible.')">
                     @csrf
                     @method('DELETE')

@@ -7,7 +7,7 @@
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-900">Modifier la Livraison #{{ $delivery->delivery_id }}</h1>
         <div class="flex space-x-3">
-            <a href="{{ route('admin.deliveries.show', $delivery) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <a href="{{ route('admin.deliveries.show', $delivery->delivery_id) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 <i class="fas fa-eye mr-2"></i> Voir
             </a>
             <a href="{{ route('admin.deliveries.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
@@ -23,7 +23,7 @@
                     <h6 class="text-lg font-semibold text-gray-900">Modifier les Informations</h6>
                 </div>
                 <div class="p-6">
-                    <form action="{{ route('admin.deliveries.update', $delivery) }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('admin.deliveries.update', $delivery->delivery_id) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
                         
@@ -36,7 +36,7 @@
                                     @foreach($packages as $package)
                                         <option value="{{ $package->package_id }}" 
                                                 {{ old('package_id', $delivery->package_id) == $package->package_id ? 'selected' : '' }}>
-                                            {{ $package->package_number }} - {{ Str::limit($package->description, 50) }}
+                                            {{ $package->package_number }} - {{ Str::limit($package->package_description, 50) }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -52,7 +52,11 @@
                                     @foreach($travelers as $traveler)
                                         <option value="{{ $traveler->traveler_id }}" 
                                                 {{ old('traveler_id', $delivery->traveler_id) == $traveler->traveler_id ? 'selected' : '' }}>
-                                            {{ $traveler->user->name }} ({{ $traveler->vehicle_type }})
+                                            @if($traveler->user)
+                                                {{ $traveler->user->first_name }} {{ $traveler->user->last_name }} ({{ $traveler->vehicle_type }})
+                                            @else
+                                                Unknown User ({{ $traveler->vehicle_type }})
+                                            @endif
                                         </option>
                                     @endforeach
                                 </select>
@@ -144,7 +148,7 @@
                                 @enderror
                             </div>
                             <div>
-                                <label for="commission_fee" class="block text-sm font-medium text-gray-700 mb-2">Frais de Commission (FCFA)</label>
+                                <label for="commission_fee" class="block text-sm font-medium text-gray-700 mb-2">Frais de Commission (XOF)</label>
                                 <input type="number" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('commission_fee') border-red-300 @enderror" 
                                        id="commission_fee" name="commission_fee" step="0.01" min="0"
                                        value="{{ old('commission_fee', $delivery->commission_fee) }}">
@@ -208,7 +212,7 @@
                         </div>
 
                         <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-                            <a href="{{ route('admin.deliveries.show', $delivery) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <a href="{{ route('admin.deliveries.show', $delivery->delivery_id) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 <i class="fas fa-times mr-2"></i> Annuler
                             </a>
                             <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
@@ -265,8 +269,8 @@
                     <h6 class="text-blue-600 font-semibold mb-3">Types de Livraison:</h6>
                     <ul class="space-y-2 mb-6">
                         <li class="text-sm"><span class="font-medium">Urbaine:</span> Livraison dans la même ville</li>
-                        <li class="text-sm"><span class="font-medium">Intercité:</span> Livraison entre villes (Frais: 1000 FCFA)</li>
-                        <li class="text-sm"><span class="font-medium">Internationale:</span> Livraison internationale (Frais: 2000 FCFA)</li>
+                        <li class="text-sm"><span class="font-medium">Intercité:</span> Livraison entre villes (Frais: 1000 XOF)</li>
+                        <li class="text-sm"><span class="font-medium">Internationale:</span> Livraison internationale (Frais: 2000 XOF)</li>
                     </ul>
 
                     <h6 class="text-blue-600 font-semibold mb-3">Statuts:</h6>

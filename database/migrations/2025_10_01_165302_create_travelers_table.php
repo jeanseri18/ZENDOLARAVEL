@@ -32,6 +32,7 @@ return new class extends Migration
             $table->boolean('accepts_fragile')->default(true);
             $table->boolean('accepts_documents')->default(true);
             $table->boolean('verification_required')->default(false);
+            $table->json('supported_delivery_types')->default(json_encode(['urban', 'intercity', 'international']));
             $table->timestamps();
             
             // Indexes

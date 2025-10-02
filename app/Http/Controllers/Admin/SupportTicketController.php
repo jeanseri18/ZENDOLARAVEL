@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SupportTicket;
+use App\Models\TicketMessage;
 use App\Models\User;
 use App\Models\Package;
 use App\Models\Transaction;
@@ -123,18 +124,21 @@ class SupportTicketController extends Controller
     /**
      * Display the specified ticket.
      */
-    public function show(SupportTicket $ticket)
+    public function show($ticketId)
     {
-        $ticket->load(['user', 'package', 'transaction', 'assignedTo']);
+        $ticket = SupportTicket::where('ticket_id', $ticketId)->firstOrFail();
+        $ticket->load(['user', 'package', 'transaction', 'assignedAdmin', 'publicMessages.user', 'internalNotes.user']);
+        $admins = User::where('role', 'admin')->where('is_active', true)->get();
         
-        return view('admin.tickets.show', compact('ticket'));
+        return view('admin.tickets.show', compact('ticket', 'admins'));
     }
 
     /**
      * Show the form for editing the specified ticket.
      */
-    public function edit(SupportTicket $ticket)
+    public function edit($ticketId)
     {
+        $ticket = SupportTicket::where('ticket_id', $ticketId)->firstOrFail();
         $users = User::where('is_active', true)->get();
         $packages = Package::with(['sender', 'receiver'])->get();
         $transactions = Transaction::with(['user', 'package'])->get();
@@ -146,8 +150,9 @@ class SupportTicketController extends Controller
     /**
      * Update the specified ticket in storage.
      */
-    public function update(Request $request, SupportTicket $ticket)
+    public function update(Request $request, $ticketId)
     {
+        $ticket = SupportTicket::where('ticket_id', $ticketId)->firstOrFail();
         $request->validate([
             'user_id' => 'required|exists:users,user_id',
             'subject' => 'required|string|max:255',
@@ -189,8 +194,9 @@ class SupportTicketController extends Controller
     /**
      * Remove the specified ticket from storage.
      */
-    public function destroy(SupportTicket $ticket)
+    public function destroy($ticketId)
     {
+        $ticket = SupportTicket::where('ticket_id', $ticketId)->firstOrFail();
         // Prevent deletion of open or in-progress tickets
         if (in_array($ticket->status, ['open', 'in_progress'])) {
             return redirect()->route('admin.tickets.index')
@@ -206,13 +212,14 @@ class SupportTicketController extends Controller
     /**
      * Assign ticket to admin.
      */
-    public function assign(Request $request, SupportTicket $ticket)
+    public function assign(Request $request, $ticketId)
     {
+        $ticket = SupportTicket::where('ticket_id', $ticketId)->firstOrFail();
         $request->validate([
             'assigned_to' => 'required|exists:users,user_id',
         ]);
 
-        $ticket->assign($request->assigned_to);
+        $ticket->assignTo($request->assigned_to);
 
         return redirect()->back()
                         ->with('success', 'Ticket assigné avec succès.');
@@ -221,8 +228,9 @@ class SupportTicketController extends Controller
     /**
      * Update ticket status.
      */
-    public function updateStatus(Request $request, SupportTicket $ticket)
+    public function updateStatus(Request $request, $ticketId)
     {
+        $ticket = SupportTicket::where('ticket_id', $ticketId)->firstOrFail();
         $request->validate([
             'status' => 'required|in:open,in_progress,resolved,closed',
             'resolution' => 'nullable|string',
@@ -243,8 +251,9 @@ class SupportTicketController extends Controller
     /**
      * Reopen a closed ticket.
      */
-    public function reopen(SupportTicket $ticket)
+    public function reopen($ticketId)
     {
+        $ticket = SupportTicket::where('ticket_id', $ticketId)->firstOrFail();
         $ticket->reopen();
 
         return redirect()->back()
@@ -256,7 +265,7 @@ class SupportTicketController extends Controller
      */
     public function export()
     {
-        $tickets = SupportTicket::with(['user', 'package', 'transaction', 'assignedTo'])->get();
+        $tickets = SupportTicket::with(['user', 'package', 'transaction', 'assignedAdmin'])->get();
         
         $filename = 'tickets_' . date('Y-m-d_H-i-s') . '.csv';
         
@@ -283,7 +292,7 @@ class SupportTicketController extends Controller
                     $ticket->category,
                     $ticket->priority,
                     $ticket->status,
-                    $ticket->assignedTo ? $ticket->assignedTo->first_name . ' ' . $ticket->assignedTo->last_name : 'Non assigné',
+                    $ticket->assignedAdmin ? $ticket->assignedAdmin->first_name . ' ' . $ticket->assignedAdmin->last_name : 'Non assigné',
                     $ticket->created_at->format('d/m/Y H:i'),
                     $ticket->resolved_at ? $ticket->resolved_at->format('d/m/Y H:i') : '',
                 ]);
@@ -312,5 +321,62 @@ class SupportTicketController extends Controller
         ];
 
         return response()->json($stats);
+    }
+
+    /**
+     * Add a reply to a ticket.
+     */
+    public function addReply(Request $request, $ticketId)
+    {
+        $ticket = SupportTicket::where('ticket_id', $ticketId)->firstOrFail();
+        $request->validate([
+            'message' => 'required|string',
+            'is_internal_note' => 'boolean',
+        ]);
+
+        $message = TicketMessage::create([
+            'ticket_id' => $ticket->ticket_id,
+            'user_id' => auth()->id(),
+            'message' => $request->message,
+            'is_admin_reply' => true,
+            'is_internal_note' => $request->boolean('is_internal_note', false),
+        ]);
+
+        // Update ticket status if it's a public reply
+        if (!$request->boolean('is_internal_note') && $ticket->status === 'open') {
+            $ticket->update(['status' => 'in_progress']);
+        }
+
+        $messageType = $request->boolean('is_internal_note') ? 'note interne' : 'réponse';
+        
+        return redirect()->back()
+                        ->with('success', ucfirst($messageType) . ' ajoutée avec succès.');
+    }
+
+    /**
+     * Add a user message to a ticket (for testing purposes).
+     */
+    public function addUserMessage(Request $request, $ticketId)
+    {
+        $ticket = SupportTicket::where('ticket_id', $ticketId)->firstOrFail();
+        $request->validate([
+            'message' => 'required|string',
+        ]);
+
+        TicketMessage::create([
+            'ticket_id' => $ticket->ticket_id,
+            'user_id' => $ticket->user_id,
+            'message' => $request->message,
+            'is_admin_reply' => false,
+            'is_internal_note' => false,
+        ]);
+
+        // Reopen ticket if it was resolved
+        if (in_array($ticket->status, ['resolved', 'closed'])) {
+            $ticket->update(['status' => 'open']);
+        }
+
+        return redirect()->back()
+                        ->with('success', 'Message utilisateur ajouté avec succès.');
     }
 }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SupportTicket extends Model
 {
@@ -33,6 +34,14 @@ class SupportTicket extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    /**
+     * Get the route key for the model.
+     */
+    public function getRouteKeyName()
+    {
+        return 'ticket_id';
+    }
 
     /**
      * Get the user who created this ticket.
@@ -64,6 +73,34 @@ class SupportTicket extends Model
     public function assignedAdmin(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to', 'user_id');
+    }
+
+    /**
+     * Get all messages for this ticket.
+     */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(TicketMessage::class, 'ticket_id');
+    }
+
+    /**
+     * Get public messages (visible to user).
+     */
+    public function publicMessages(): HasMany
+    {
+        return $this->hasMany(TicketMessage::class, 'ticket_id')
+                    ->where('is_internal_note', false)
+                    ->orderBy('created_at', 'asc');
+    }
+
+    /**
+     * Get internal notes (admin only).
+     */
+    public function internalNotes(): HasMany
+    {
+        return $this->hasMany(TicketMessage::class, 'ticket_id')
+                    ->where('is_internal_note', true)
+                    ->orderBy('created_at', 'asc');
     }
 
     /**

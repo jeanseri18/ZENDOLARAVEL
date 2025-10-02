@@ -77,6 +77,9 @@
                         Route
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Voyageur
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -103,13 +106,24 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 h-8 w-8">
-                                <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-                                    <span class="text-xs font-medium text-gray-700">{{ substr($package->user->name, 0, 1) }}</span>
-                                </div>
+                                @if($package->user)
+                                    <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                        <span class="text-xs font-medium text-gray-700">{{ substr($package->user->first_name, 0, 1) }}</span>
+                                    </div>
+                                @else
+                                    <div class="h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center">
+                                        <span class="text-xs font-medium text-gray-600">?</span>
+                                    </div>
+                                @endif
                             </div>
                             <div class="ml-3">
-                                <div class="text-sm font-medium text-gray-900">{{ $package->user->name }}</div>
-                                <div class="text-sm text-gray-500">{{ $package->user->email }}</div>
+                                @if($package->user)
+                                    <div class="text-sm font-medium text-gray-900">{{ $package->user->first_name }} {{ $package->user->last_name }}</div>
+                                    <div class="text-sm text-gray-500">{{ $package->user->email }}</div>
+                                @else
+                                    <div class="text-sm font-medium text-gray-900">Unknown User</div>
+                                    <div class="text-sm text-gray-500">No email available</div>
+                                @endif
                             </div>
                         </div>
                     </td>
@@ -119,8 +133,28 @@
                         <div class="text-sm text-gray-900">{{ $package->destination }}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
+                        @if($package->delivery_type)
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                @switch($package->delivery_type)
+                                    @case('urban') bg-green-100 text-green-800 @break
+                                    @case('intercity') bg-blue-100 text-blue-800 @break
+                                    @case('international') bg-purple-100 text-purple-800 @break
+                                    @default bg-gray-100 text-gray-800
+                                @endswitch">
+                                @switch($package->delivery_type)
+                                    @case('urban') Urbain @break
+                                    @case('intercity') Intercité @break
+                                    @case('international') International @break
+                                    @default {{ $package->delivery_type }}
+                                @endswitch
+                            </span>
+                        @else
+                            <span class="text-sm text-gray-400">Auto</span>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
                         @if($package->traveler)
-                            <div class="text-sm font-medium text-gray-900">{{ $package->traveler->user->name }}</div>
+                            <div class="text-sm font-medium text-gray-900">{{ $package->traveler->user->first_name }} {{ $package->traveler->user->last_name }}</div>
                             <div class="text-sm text-gray-500">{{ $package->traveler->user->email }}</div>
                         @else
                             <span class="text-sm text-gray-400">Non assigné</span>
@@ -145,7 +179,7 @@
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {{ number_format($package->price, 0, ',', ' ') }} FCFA
+                        {{ number_format($package->final_delivery_fee ?? $package->estimated_delivery_fee ?? 0, 0, ',', ' ') }} XOF
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {{ $package->created_at->format('d/m/Y') }}
@@ -155,8 +189,8 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div class="flex space-x-2">
-                            <a href="{{ route('admin.packages.show', $package) }}" class="text-blue-600 hover:text-blue-900">Voir</a>
-                            <a href="{{ route('admin.packages.edit', $package) }}" class="text-indigo-600 hover:text-indigo-900">Modifier</a>
+                            <a href="{{ route('admin.packages.show', $package->package_id) }}" class="text-blue-600 hover:text-blue-900">Voir</a>
+                            <a href="{{ route('admin.packages.edit', $package->package_id) }}" class="text-indigo-600 hover:text-indigo-900">Modifier</a>
                             
                             @if($package->status !== 'delivered' && $package->status !== 'cancelled')
                                 <!-- Status Update Dropdown -->
@@ -194,7 +228,7 @@
                             @endif
                             
                             @if($package->status === 'pending' || $package->status === 'cancelled')
-                                <form method="POST" action="{{ route('admin.packages.destroy', $package) }}" class="inline" 
+                                <form method="POST" action="{{ route('admin.packages.destroy', $package->package_id) }}" class="inline" 
                                       onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce colis ?')">
                                     @csrf
                                     @method('DELETE')

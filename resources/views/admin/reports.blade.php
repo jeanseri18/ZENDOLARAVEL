@@ -60,7 +60,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600">Revenus totaux</p>
-                    <p class="text-2xl font-bold text-gray-900">€ 45,231</p>
+                    <p class="text-2xl font-bold text-gray-900">45,231 XOF</p>
                     <p class="text-sm text-green-600">+12.5% vs période précédente</p>
                 </div>
                 <div class="p-3 bg-green-100 rounded-full">
@@ -162,7 +162,7 @@
                         <p class="text-sm text-gray-600">156 colis</p>
                     </div>
                     <div class="text-right">
-                        <p class="font-medium text-gray-900">€ 12,450</p>
+                        <p class="font-medium text-gray-900">12,450 XOF</p>
                         <p class="text-sm text-green-600">+15%</p>
                     </div>
                 </div>
@@ -172,7 +172,7 @@
                         <p class="text-sm text-gray-600">134 colis</p>
                     </div>
                     <div class="text-right">
-                        <p class="font-medium text-gray-900">€ 10,720</p>
+                        <p class="font-medium text-gray-900">10,720 XOF</p>
                         <p class="text-sm text-green-600">+8%</p>
                     </div>
                 </div>
@@ -182,7 +182,7 @@
                         <p class="text-sm text-gray-600">98 colis</p>
                     </div>
                     <div class="text-right">
-                        <p class="font-medium text-gray-900">€ 7,840</p>
+                        <p class="font-medium text-gray-900">7,840 XOF</p>
                         <p class="text-sm text-red-600">-2%</p>
                     </div>
                 </div>
@@ -204,7 +204,7 @@
                         </div>
                     </div>
                     <div class="text-right">
-                        <p class="font-medium text-gray-900">€ 3,600</p>
+                        <p class="font-medium text-gray-900">3,600 XOF</p>
                         <p class="text-sm text-yellow-600">⭐ 4.9</p>
                     </div>
                 </div>
@@ -219,7 +219,7 @@
                         </div>
                     </div>
                     <div class="text-right">
-                        <p class="font-medium text-gray-900">€ 3,040</p>
+                        <p class="font-medium text-gray-900">3,040 XOF</p>
                         <p class="text-sm text-yellow-600">⭐ 4.8</p>
                     </div>
                 </div>
@@ -234,7 +234,7 @@
                         </div>
                     </div>
                     <div class="text-right">
-                        <p class="font-medium text-gray-900">€ 2,560</p>
+                        <p class="font-medium text-gray-900">2,560 XOF</p>
                         <p class="text-sm text-yellow-600">⭐ 4.7</p>
                     </div>
                 </div>

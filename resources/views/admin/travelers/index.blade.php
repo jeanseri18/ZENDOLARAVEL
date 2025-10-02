@@ -136,6 +136,9 @@
                         Localisation
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Types supportés
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Vérification
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -158,24 +161,34 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 h-10 w-10">
-                                @if($traveler->profile && $traveler->profile->avatar)
-                                    <img class="h-10 w-10 rounded-full" src="{{ asset('storage/' . $traveler->profile->avatar) }}" alt="{{ $traveler->name }}">
+                                @if($traveler->user)
+                                    @if($traveler->profile && $traveler->profile->avatar)
+                                        <img class="h-10 w-10 rounded-full" src="{{ asset('storage/' . $traveler->profile->avatar) }}" alt="{{ $traveler->user->first_name }} {{ $traveler->user->last_name }}">
+                                    @else
+                                        <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                            <span class="text-sm font-medium text-gray-700">{{ substr($traveler->user->first_name, 0, 1) }}</span>
+                                        </div>
+                                    @endif
                                 @else
-                                    <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                        <span class="text-sm font-medium text-gray-700">{{ substr($traveler->name, 0, 1) }}</span>
+                                    <div class="h-10 w-10 rounded-full bg-gray-400 flex items-center justify-center">
+                                        <span class="text-sm font-medium text-gray-600">?</span>
                                     </div>
                                 @endif
                             </div>
                             <div class="ml-4">
-                                <div class="text-sm font-medium text-gray-900">{{ $traveler->name }}</div>
+                                @if($traveler->user)
+                                    <div class="text-sm font-medium text-gray-900">{{ $traveler->user->first_name }} {{ $traveler->user->last_name }}</div>
+                                @else
+                                    <div class="text-sm font-medium text-gray-900">Unknown User</div>
+                                @endif
                                 <div class="text-sm text-gray-500">ID: {{ $traveler->id }}</div>
                             </div>
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="text-sm text-gray-900">{{ $traveler->email }}</div>
-                        @if($traveler->phone)
-                            <div class="text-sm text-gray-500">{{ $traveler->phone }}</div>
+                        @if($traveler->phone_number)
+                            <div class="text-sm text-gray-500">{{ $traveler->phone_number }}</div>
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -187,8 +200,34 @@
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
+                        @if($traveler->supported_delivery_types && is_array($traveler->supported_delivery_types) && count($traveler->supported_delivery_types) > 0)
+                            <div class="flex flex-wrap gap-1">
+                                @foreach($traveler->supported_delivery_types as $type)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                        @switch($type)
+                                            @case('standard') bg-green-100 text-green-800 @break
+                                            @case('express') bg-blue-100 text-blue-800 @break
+                                            @case('fragile') bg-yellow-100 text-yellow-800 @break
+                                            @case('documents') bg-purple-100 text-purple-800 @break
+                                            @default bg-gray-100 text-gray-800
+                                        @endswitch">
+                                        @switch($type)
+                                            @case('standard') Standard @break
+                                            @case('express') Express @break
+                                            @case('fragile') Fragile @break
+                                            @case('documents') Documents @break
+                                            @default {{ $type }}
+                                        @endswitch
+                                    </span>
+                                @endforeach
+                            </div>
+                        @else
+                            <span class="text-sm text-gray-400">Aucun type défini</span>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
-                            @if($traveler->email_verified_at)
+                            @if($traveler->is_verified)
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
@@ -209,7 +248,7 @@
                         @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        @if($traveler->profile && $traveler->profile->is_available)
+                        @if($traveler->is_available)
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 Disponible
                             </span>
@@ -237,21 +276,21 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div class="flex space-x-2">
-                            <a href="{{ route('admin.travelers.show', $traveler) }}" class="text-blue-600 hover:text-blue-900">Voir</a>
-                            <a href="{{ route('admin.travelers.edit', $traveler) }}" class="text-indigo-600 hover:text-indigo-900">Modifier</a>
+                            <a href="{{ route('admin.travelers.show', $traveler->traveler_id) }}" class="text-blue-600 hover:text-blue-900">Voir</a>
+                            <a href="{{ route('admin.travelers.edit', $traveler->traveler_id) }}" class="text-indigo-600 hover:text-indigo-900">Modifier</a>
                             
                             <!-- Quick Actions Dropdown -->
                             <div class="relative inline-block text-left">
-                                <button type="button" class="text-green-600 hover:text-green-900" onclick="toggleDropdown('actions-{{ $traveler->id }}')">
+                                <button type="button" class="text-green-600 hover:text-green-900" onclick="toggleDropdown('actions-{{ $traveler->traveler_id }}')">
                                     Actions
                                 </button>
-                                <div id="actions-{{ $traveler->id }}" class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5">
+                                <div id="actions-{{ $traveler->traveler_id }}" class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5">
                                     <div class="py-1">
-                                        @if(!$traveler->email_verified_at)
+                                        @if(!$traveler->is_verified)
                                         <form method="POST" action="{{ route('admin.travelers.toggle-verification', $traveler) }}" class="block">
                                             @csrf
                                             @method('PATCH')
-                                            <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-gray-100">Vérifier email</button>
+                                            <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-gray-100">Vérifier</button>
                                         </form>
                                         @endif
                                         
@@ -259,12 +298,12 @@
                                             @csrf
                                             @method('PATCH')
                                             <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-gray-100">
-                                                {{ $traveler->profile && $traveler->profile->is_available ? 'Marquer indisponible' : 'Marquer disponible' }}
+                                                {{ $traveler->is_available ? 'Marquer indisponible' : 'Marquer disponible' }}
                                             </button>
                                         </form>
                                         
                                         @if($traveler->packages_count == 0)
-                                        <form method="POST" action="{{ route('admin.travelers.destroy', $traveler) }}" class="block" 
+                                        <form method="POST" action="{{ route('admin.travelers.destroy', $traveler->traveler_id) }}" class="block" 
                                               onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce livreur ?')">
                                             @csrf
                                             @method('DELETE')

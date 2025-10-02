@@ -13,7 +13,7 @@
             <a href="{{ route('admin.transactions.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
                 Retour à la liste
             </a>
-            <a href="{{ route('admin.transactions.edit', $transaction) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <a href="{{ route('admin.transactions.edit', $transaction->transaction_id) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
                 Modifier
             </a>
         </div>
@@ -45,7 +45,7 @@
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Montant</dt>
-                        <dd class="mt-1 text-lg font-semibold text-gray-900">{{ number_format($transaction->amount, 0, ',', ' ') }} FCFA</dd>
+                        <dd class="mt-1 text-lg font-semibold text-gray-900">{{ number_format($transaction->amount, 0, ',', ' ') }} XOF</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Méthode de paiement</dt>
@@ -71,7 +71,7 @@
                     @if($transaction->discount_amount > 0)
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Remise appliquée</dt>
-                        <dd class="mt-1 text-sm text-green-600 font-medium">-{{ number_format($transaction->discount_amount, 0, ',', ' ') }} FCFA</dd>
+                        <dd class="mt-1 text-sm text-green-600 font-medium">-{{ number_format($transaction->discount_amount, 0, ',', ' ') }} XOF</dd>
                     </div>
                     @endif
                     @if($transaction->promo_code)
@@ -102,21 +102,34 @@
             <div class="px-6 py-4">
                 <div class="flex items-center space-x-4">
                     <div class="flex-shrink-0">
-                        <div class="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span class="text-lg font-medium text-gray-700">{{ substr($transaction->user->name, 0, 1) }}</span>
-                        </div>
+                        @if($transaction->user)
+                            <div class="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
+                                <span class="text-lg font-medium text-gray-700">{{ substr($transaction->user->first_name, 0, 1) }}</span>
+                            </div>
+                        @else
+                            <div class="h-12 w-12 rounded-full bg-gray-400 flex items-center justify-center">
+                                <span class="text-lg font-medium text-gray-600">?</span>
+                            </div>
+                        @endif
                     </div>
                     <div class="flex-1">
-                        <h4 class="text-lg font-medium text-gray-900">{{ $transaction->user->name }}</h4>
-                        <p class="text-sm text-gray-500">{{ $transaction->user->email }}</p>
-                        @if($transaction->user->phone)
-                            <p class="text-sm text-gray-500">{{ $transaction->user->phone }}</p>
+                        @if($transaction->user)
+                            <h4 class="text-lg font-medium text-gray-900">{{ $transaction->user->first_name }} {{ $transaction->user->last_name }}</h4>
+                            <p class="text-sm text-gray-500">{{ $transaction->user->email }}</p>
+                            @if($transaction->user->phone)
+                                <p class="text-sm text-gray-500">{{ $transaction->user->phone }}</p>
+                            @endif
+                        @else
+                            <h4 class="text-lg font-medium text-gray-900">Unknown User</h4>
+                            <p class="text-sm text-gray-500">No email available</p>
                         @endif
                     </div>
                     <div>
-                        <a href="{{ route('admin.users.show', $transaction->user) }}" class="text-blue-600 hover:text-blue-900 text-sm font-medium">
-                            Voir le profil
-                        </a>
+                        @if($transaction->user)
+                            <a href="{{ route('admin.users.show', $transaction->user->user_id) }}" class="text-blue-600 hover:text-blue-900 text-sm font-medium">
+                                Voir le profil
+                            </a>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -161,7 +174,7 @@
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Itinéraire</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $transaction->package->origin_city }} → {{ $transaction->package->destination_city }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ $transaction->package->pickup_city }} → {{ $transaction->package->delivery_city }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Poids</dt>
@@ -169,11 +182,11 @@
                     </div>
                     <div class="md:col-span-2">
                         <dt class="text-sm font-medium text-gray-500">Description</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $transaction->package->description }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ $transaction->package->package_description }}</dd>
                     </div>
                 </dl>
                 <div class="mt-4">
-                    <a href="{{ route('admin.packages.show', $transaction->package) }}" class="text-blue-600 hover:text-blue-900 text-sm font-medium">
+                    <a href="{{ route('admin.packages.show', $transaction->package->package_id) }}" class="text-blue-600 hover:text-blue-900 text-sm font-medium">
                         Voir les détails du colis
                     </a>
                 </div>
@@ -291,7 +304,7 @@
                         <p class="text-sm font-medium text-gray-900">#{{ $transaction->refund_transaction->payment_reference }}</p>
                         <p class="text-sm text-gray-500">{{ $transaction->refund_transaction->created_at->format('d/m/Y à H:i') }}</p>
                     </div>
-                    <a href="{{ route('admin.transactions.show', $transaction->refund_transaction) }}" class="text-blue-600 hover:text-blue-900 text-sm font-medium">
+                    <a href="{{ route('admin.transactions.show', $transaction->refund_transaction->transaction_id) }}" class="text-blue-600 hover:text-blue-900 text-sm font-medium">
                         Voir
                     </a>
                 </div>
@@ -310,7 +323,7 @@
                         <p class="text-sm font-medium text-gray-900">#{{ $transaction->original_transaction->payment_reference }}</p>
                         <p class="text-sm text-gray-500">{{ $transaction->original_transaction->created_at->format('d/m/Y à H:i') }}</p>
                     </div>
-                    <a href="{{ route('admin.transactions.show', $transaction->original_transaction) }}" class="text-blue-600 hover:text-blue-900 text-sm font-medium">
+                    <a href="{{ route('admin.transactions.show', $transaction->original_transaction->transaction_id) }}" class="text-blue-600 hover:text-blue-900 text-sm font-medium">
                         Voir
                     </a>
                 </div>

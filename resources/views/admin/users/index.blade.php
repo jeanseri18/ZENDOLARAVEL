@@ -88,14 +88,14 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 h-10 w-10">
-                                <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                    <span class="text-sm font-medium text-gray-700">{{ substr($user->name, 0, 1) }}</span>
+                                    <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                        <span class="text-sm font-medium text-gray-700">{{ substr($user->first_name, 0, 1) }}</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="ml-4">
-                                <div class="text-sm font-medium text-gray-900">{{ $user->name }}</div>
-                                <div class="text-sm text-gray-500">{{ $user->email }}</div>
-                            </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">{{ $user->first_name }} {{ $user->last_name }}</div>
+                                    <div class="text-sm text-gray-500">{{ $user->email }}</div>
+                                </div>
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -129,11 +129,11 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div class="flex space-x-2">
-                            <a href="{{ route('admin.users.show', $user) }}" class="text-blue-600 hover:text-blue-900">Voir</a>
-                            <a href="{{ route('admin.users.edit', $user) }}" class="text-indigo-600 hover:text-indigo-900">Modifier</a>
+                            <a href="{{ route('admin.users.show', $user->user_id) }}" class="text-blue-600 hover:text-blue-900">Voir</a>
+                            <a href="{{ route('admin.users.edit', $user->user_id) }}" class="text-indigo-600 hover:text-indigo-900">Modifier</a>
                             
                             @if($user->role !== 'admin')
-                                <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}" class="inline">
+                                <form method="POST" action="{{ route('admin.users.toggle-status', $user->user_id) }}" class="inline">
                                     @csrf
                                     @method('PATCH')
                                     <button type="submit" class="{{ $user->is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900' }}">
@@ -142,7 +142,7 @@
                                 </form>
                                 
                                 @if(!$user->email_verified_at)
-                                    <form method="POST" action="{{ route('admin.users.toggle-verification', $user) }}" class="inline">
+                                    <form method="POST" action="{{ route('admin.users.toggle-verification', $user->user_id) }}" class="inline">
                                         @csrf
                                         @method('PATCH')
                                         <button type="submit" class="text-green-600 hover:text-green-900">
@@ -151,7 +151,7 @@
                                     </form>
                                 @endif
                                 
-                                <form method="POST" action="{{ route('admin.users.destroy', $user) }}" class="inline" 
+                                <form method="POST" action="{{ route('admin.users.destroy', $user->user_id) }}" class="inline" 
                                       onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')">
                                     @csrf
                                     @method('DELETE')

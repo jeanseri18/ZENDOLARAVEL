@@ -125,9 +125,9 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Devise par défaut</label>
                             <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                <option value="EUR" selected>Euro (€)</option>
+                                <option value="EUR">Euro (€)</option>
                                 <option value="USD">Dollar US ($)</option>
-                                <option value="XOF">Franc CFA (CFA)</option>
+                                <option value="XOF" selected>Franc CFA (XOF)</option>
                             </select>
                         </div>
                         <div>

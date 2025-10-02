@@ -10,7 +10,7 @@
             <p class="text-gray-600">Transaction #{{ $transaction->payment_reference }}</p>
         </div>
         <div class="flex space-x-3">
-            <a href="{{ route('admin.transactions.show', $transaction) }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <a href="{{ route('admin.transactions.show', $transaction->transaction_id) }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
                 Voir les détails
             </a>
             <a href="{{ route('admin.transactions.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
@@ -21,7 +21,7 @@
 </div>
 
 <div class="max-w-4xl mx-auto">
-    <form method="POST" action="{{ route('admin.transactions.update', $transaction) }}" class="space-y-6">
+    <form method="POST" action="{{ route('admin.transactions.update', $transaction->transaction_id) }}" class="space-y-6">
         @csrf
         @method('PUT')
         
@@ -80,7 +80,7 @@
                             <option value="">Aucun colis associé</option>
                             @foreach($packages as $package)
                                 <option value="{{ $package->id }}" {{ $transaction->package_id == $package->id ? 'selected' : '' }}>
-                                    {{ $package->tracking_number }} - {{ $package->origin_city }} → {{ $package->destination_city }}
+                                    {{ $package->tracking_number }} - {{ $package->pickup_city }} → {{ $package->delivery_city }}
                                 </option>
                             @endforeach
                         </select>
@@ -92,7 +92,7 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Montant (FCFA) *</label>
+                        <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Montant (XOF) *</label>
                         <input type="number" name="amount" id="amount" value="{{ old('amount', $transaction->amount) }}" required min="0" step="1"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('amount') border-red-500 @enderror">
                         @error('amount')
@@ -131,7 +131,7 @@
                             <option value="">Aucun code promo</option>
                             @foreach($promoCodes as $promoCode)
                                 <option value="{{ $promoCode->id }}" {{ $transaction->promo_code_id == $promoCode->id ? 'selected' : '' }}>
-                                    {{ $promoCode->code }} ({{ $promoCode->discount_type === 'percentage' ? $promoCode->discount_value . '%' : number_format($promoCode->discount_value, 0, ',', ' ') . ' FCFA' }})
+                                    {{ $promoCode->code }} ({{ $promoCode->discount_type === 'percentage' ? $promoCode->discount_value . '%' : number_format($promoCode->discount_value, 0, ',', ' ') . ' XOF' }})
                                 </option>
                             @endforeach
                         </select>
@@ -141,7 +141,7 @@
                     </div>
                     
                     <div>
-                        <label for="discount_amount" class="block text-sm font-medium text-gray-700 mb-1">Montant de la remise (FCFA)</label>
+                        <label for="discount_amount" class="block text-sm font-medium text-gray-700 mb-1">Montant de la remise (XOF)</label>
                         <input type="number" name="discount_amount" id="discount_amount" value="{{ old('discount_amount', $transaction->discount_amount) }}" min="0" step="1"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 @error('discount_amount') border-red-500 @enderror">
                         @error('discount_amount')
@@ -228,7 +228,7 @@
         
         <!-- Form Actions -->
         <div class="flex justify-end space-x-3">
-            <a href="{{ route('admin.transactions.show', $transaction) }}" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-lg text-sm font-medium">
+            <a href="{{ route('admin.transactions.show', $transaction->transaction_id) }}" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-lg text-sm font-medium">
                 Annuler
             </a>
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium">

@@ -92,8 +92,13 @@
                                         </div>
                                     @endif
                                     <div>
-                                        <div class="text-sm font-medium text-gray-900">{{ $document->user->name }}</div>
-                                        <div class="text-sm text-gray-500">{{ $document->user->email }}</div>
+                                        @if($document->user)
+                                    <div class="text-sm font-medium text-gray-900">{{ $document->user->first_name }} {{ $document->user->last_name }}</div>
+                                    <div class="text-sm text-gray-500">{{ $document->user->email }}</div>
+                                @else
+                                    <div class="text-sm font-medium text-gray-900">Unknown User</div>
+                                    <div class="text-sm text-gray-500">No email available</div>
+                                @endif
                                     </div>
                                 </div>
                             </td>
@@ -180,7 +185,13 @@
                                         @csrf
                                         @method('PATCH')
                                         <div class="py-3">
-                                            <p class="mb-2"><strong>Utilisateur:</strong> {{ $document->user->name }}</p>
+                                            <p class="mb-2"><strong>Utilisateur:</strong> 
+                                @if($document->user)
+                                    {{ $document->user->first_name }} {{ $document->user->last_name }}
+                                @else
+                                    Unknown User
+                                @endif
+                            </p>
                                             <p class="mb-2"><strong>Type:</strong> {{ $document->document_type_label }}</p>
                                             <p class="mb-4"><strong>Numéro:</strong> {{ $document->document_number }}</p>
                                             

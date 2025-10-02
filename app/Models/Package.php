@@ -36,7 +36,8 @@ class Package extends Model
         'estimated_delivery_fee',
         'final_delivery_fee',
         'status',
-        'priority'
+        'priority',
+        'delivery_type'
     ];
 
     protected $casts = [
@@ -109,6 +110,22 @@ class Package extends Model
     }
 
     /**
+     * Relation avec les transactions
+     */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class, 'package_id', 'package_id');
+    }
+
+    /**
+     * Relation avec les propositions
+     */
+    public function proposals(): HasMany
+    {
+        return $this->hasMany(Proposal::class, 'package_id', 'package_id');
+    }
+
+    /**
      * Scope pour les packages confirmés
      */
     public function scopeConfirmed($query)
@@ -162,5 +179,65 @@ class Package extends Model
         ];
         
         return $labels[$this->status] ?? $this->status;
+    }
+
+    /**
+     * Get delivery type label in French.
+     */
+    public function getDeliveryTypeLabelAttribute()
+    {
+        $labels = [
+            'urban' => 'Urbaine',
+            'intercity' => 'Intercité',
+            'international' => 'Internationale'
+        ];
+
+        return $labels[$this->delivery_type] ?? $this->delivery_type;
+    }
+
+    /**
+     * Automatically determine and set delivery type based on cities.
+     */
+    public function setDeliveryTypeFromCities()
+    {
+        if ($this->pickup_city && $this->delivery_city) {
+            $this->delivery_type = Traveler::determineDeliveryType($this->pickup_city, $this->delivery_city);
+        }
+    }
+
+    /**
+     * Scope for filtering by delivery type.
+     */
+    public function scopeByDeliveryType($query, $type)
+    {
+        return $query->where('delivery_type', $type);
+    }
+
+    /**
+     * Check if package is international delivery.
+     */
+    public function isInternational()
+    {
+        return $this->delivery_type === 'international';
+    }
+
+    /**
+     * Boot method to automatically set delivery type.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($package) {
+            if (!$package->delivery_type && $package->pickup_city && $package->delivery_city) {
+                $package->delivery_type = Traveler::determineDeliveryType($package->pickup_city, $package->delivery_city);
+            }
+        });
+
+        static::updating(function ($package) {
+            if ($package->isDirty(['pickup_city', 'delivery_city']) && (!$package->delivery_type || $package->isDirty(['pickup_city', 'delivery_city']))) {
+                $package->delivery_type = Traveler::determineDeliveryType($package->pickup_city, $package->delivery_city);
+            }
+        });
     }
 }

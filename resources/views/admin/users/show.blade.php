@@ -1,19 +1,19 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Détails Utilisateur - ' . $user->name)
+@section('title', 'Détails Utilisateur - ' . $user->first_name . ' ' . $user->last_name)
 
 @section('content')
 <div class="mb-6">
     <div class="flex justify-between items-center">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Détails de l'Utilisateur</h1>
-            <p class="text-gray-600">Informations complètes sur {{ $user->name }}</p>
+            <p class="text-gray-600">Informations complètes sur {{ $user->first_name }} {{ $user->last_name }}</p>
         </div>
         <div class="flex space-x-3">
             <a href="{{ route('admin.users.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
                 Retour à la liste
             </a>
-            <a href="{{ route('admin.users.edit', $user) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <a href="{{ route('admin.users.edit', $user->user_id) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
                 Modifier
             </a>
         </div>
@@ -31,7 +31,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
-                        <p class="text-sm text-gray-900">{{ $user->name }}</p>
+                        <p class="text-sm text-gray-900">{{ $user->first_name }} {{ $user->last_name }}</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -39,25 +39,25 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                        <p class="text-sm text-gray-900">{{ $user->profile->phone ?? 'Non renseigné' }}</p>
+                        <p class="text-sm text-gray-900">{{ $user->phone_number ?? 'Non renseigné' }}</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date de naissance</label>
                         <p class="text-sm text-gray-900">
-                            {{ $user->profile->date_of_birth ? $user->profile->date_of_birth->format('d/m/Y') : 'Non renseigné' }}
+                            {{ $user->profile?->date_of_birth?->format('d/m/Y') ?? 'Non renseigné' }}
                         </p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
-                        <p class="text-sm text-gray-900">{{ $user->profile->address ?? 'Non renseigné' }}</p>
+                        <p class="text-sm text-gray-900">{{ $user->profile?->address ?? 'Non renseigné' }}</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Ville</label>
-                        <p class="text-sm text-gray-900">{{ $user->profile->city ?? 'Non renseigné' }}</p>
+                        <p class="text-sm text-gray-900">{{ $user->profile?->city ?? 'Non renseigné' }}</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Pays</label>
-                        <p class="text-sm text-gray-900">{{ $user->profile->country ?? 'Non renseigné' }}</p>
+                        <p class="text-sm text-gray-900">{{ $user->profile?->country ?? 'Non renseigné' }}</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
@@ -99,7 +99,7 @@
                             @foreach($user->packages->take(5) as $package)
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    <a href="{{ route('admin.packages.show', $package) }}" class="text-blue-600 hover:text-blue-900">
+                                    <a href="{{ route('admin.packages.show', $package->package_id) }}" class="text-blue-600 hover:text-blue-900">
                                         {{ $package->tracking_number }}
                                     </a>
                                 </td>
@@ -156,7 +156,7 @@
                         <div class="flex justify-between items-start">
                             <div>
                                 <h4 class="text-sm font-medium text-gray-900">
-                                    <a href="{{ route('admin.support-tickets.show', $ticket) }}" class="text-blue-600 hover:text-blue-900">
+                                    <a href="{{ route('admin.support-tickets.show', $ticket->ticket_id) }}" class="text-blue-600 hover:text-blue-900">
                                         #{{ $ticket->ticket_number }} - {{ $ticket->subject }}
                                     </a>
                                 </h4>
@@ -252,7 +252,7 @@
                 <div class="flex justify-between items-center">
                     <span class="text-sm font-medium text-gray-700">Total dépensé</span>
                     <span class="text-sm font-semibold text-gray-900">
-                        {{ number_format($user->transactions->where('transaction_status', 'completed')->sum('amount'), 0, ',', ' ') }} FCFA
+                        {{ number_format($user->transactions->where('transaction_status', 'completed')->sum('amount'), 0, ',', ' ') }} XOF
                     </span>
                 </div>
                 @endif
@@ -284,7 +284,7 @@
                 </form>
                 @endif
                 
-                <form method="POST" action="{{ route('admin.users.destroy', $user) }}" 
+                <form method="POST" action="{{ route('admin.users.destroy', $user->user_id) }}" 
                       onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')">
                     @csrf
                     @method('DELETE')

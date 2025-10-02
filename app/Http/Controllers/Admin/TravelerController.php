@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Traveler;
 use App\Models\User;
 use App\Models\Package;
+use App\Services\DeliveryTypeService;
 use Illuminate\Http\Request;
 
 class TravelerController extends Controller
@@ -98,6 +99,8 @@ class TravelerController extends Controller
             'service_areas.*' => 'string|max:255',
             'hourly_rate' => 'required|numeric|min:5|max:100',
             'bio' => 'nullable|string|max:1000',
+            'supported_delivery_types' => 'nullable|array',
+            'supported_delivery_types.*' => 'in:standard,express,fragile,documents',
             'is_verified' => 'boolean',
             'is_available' => 'boolean',
         ]);
@@ -114,6 +117,7 @@ class TravelerController extends Controller
             'service_areas' => $request->service_areas,
             'hourly_rate' => $request->hourly_rate,
             'bio' => $request->bio,
+            'supported_delivery_types' => $request->supported_delivery_types ?? DeliveryTypeService::getSupportedTypes(),
             'is_verified' => $request->boolean('is_verified'),
             'is_available' => $request->boolean('is_available'),
             'rating' => 0,
@@ -127,8 +131,10 @@ class TravelerController extends Controller
     /**
      * Display the specified traveler.
      */
-    public function show(Traveler $traveler)
+    public function show($travelerId)
     {
+        $traveler = Traveler::where('traveler_id', $travelerId)->firstOrFail();
+        
         $traveler->load([
             'user', 
             'packages' => function($query) {
@@ -144,18 +150,26 @@ class TravelerController extends Controller
             'total_packages' => $traveler->packages()->count(),
             'completed_packages' => $traveler->packages()->where('status', 'delivered')->count(),
             'in_progress_packages' => $traveler->packages()->whereIn('status', ['active', 'in_transit'])->count(),
-            'total_earnings' => $traveler->packages()->where('status', 'delivered')->sum('delivery_fee'),
+            'total_earnings' => $traveler->packages()->where('status', 'delivered')->sum('final_delivery_fee'),
             'avg_rating' => $traveler->rating,
         ];
         
-        return view('admin.travelers.show', compact('traveler', 'recentStats'));
+        // Get recent packages for this traveler
+        $recentPackages = $traveler->packages()->with(['sender'])->latest()->take(5)->get();
+        
+        // Get delivered packages for this traveler
+        $deliveredPackages = $traveler->packages()->where('status', 'delivered')->with(['sender', 'receiver'])->latest()->get();
+        
+        return view('admin.travelers.show', compact('traveler', 'recentStats', 'recentPackages', 'deliveredPackages'));
     }
 
     /**
      * Show the form for editing the specified traveler.
      */
-    public function edit(Traveler $traveler)
+    public function edit($travelerId)
     {
+        $traveler = Traveler::where('traveler_id', $travelerId)->firstOrFail();
+        
         $users = User::where(function($query) use ($traveler) {
             $query->whereDoesntHave('traveler')
                   ->orWhere('user_id', $traveler->user_id);
@@ -167,8 +181,10 @@ class TravelerController extends Controller
     /**
      * Update the specified traveler in storage.
      */
-    public function update(Request $request, Traveler $traveler)
+    public function update(Request $request, $travelerId)
     {
+        $traveler = Traveler::where('traveler_id', $travelerId)->firstOrFail();
+        
         $request->validate([
             'user_id' => 'required|exists:users,user_id|unique:travelers,user_id,' . $traveler->traveler_id . ',traveler_id',
             'vehicle_type' => 'required|string|max:100',
@@ -182,6 +198,8 @@ class TravelerController extends Controller
             'service_areas.*' => 'string|max:255',
             'hourly_rate' => 'required|numeric|min:5|max:100',
             'bio' => 'nullable|string|max:1000',
+            'supported_delivery_types' => 'nullable|array',
+            'supported_delivery_types.*' => 'in:standard,express,fragile,documents',
             'is_verified' => 'boolean',
             'is_available' => 'boolean',
         ]);
@@ -198,6 +216,7 @@ class TravelerController extends Controller
             'service_areas' => $request->service_areas,
             'hourly_rate' => $request->hourly_rate,
             'bio' => $request->bio,
+            'supported_delivery_types' => $request->supported_delivery_types ?? $traveler->supported_delivery_types ?? DeliveryTypeService::getSupportedTypes(),
             'is_verified' => $request->boolean('is_verified'),
             'is_available' => $request->boolean('is_available'),
         ]);
@@ -209,8 +228,10 @@ class TravelerController extends Controller
     /**
      * Remove the specified traveler from storage.
      */
-    public function destroy(Traveler $traveler)
+    public function destroy($travelerId)
     {
+        $traveler = Traveler::where('traveler_id', $travelerId)->firstOrFail();
+        
         // Prevent deletion if traveler has active packages
         $activePackages = $traveler->packages()->whereIn('status', ['active', 'in_transit'])->count();
         if ($activePackages > 0) {
@@ -227,8 +248,10 @@ class TravelerController extends Controller
     /**
      * Toggle traveler verification status.
      */
-    public function toggleVerification(Traveler $traveler)
+    public function toggleVerification($travelerId)
     {
+        $traveler = Traveler::where('traveler_id', $travelerId)->firstOrFail();
+        
         $traveler->update([
             'is_verified' => !$traveler->is_verified,
             'verified_at' => $traveler->is_verified ? null : now(),
@@ -243,8 +266,10 @@ class TravelerController extends Controller
     /**
      * Toggle traveler availability status.
      */
-    public function toggleAvailability(Traveler $traveler)
+    public function toggleAvailability($travelerId)
     {
+        $traveler = Traveler::where('traveler_id', $travelerId)->firstOrFail();
+        
         $traveler->update([
             'is_available' => !$traveler->is_available,
         ]);
@@ -275,7 +300,7 @@ class TravelerController extends Controller
             // CSV headers
             fputcsv($file, [
                 'ID', 'Nom', 'Email', 'Téléphone', 'Type véhicule', 'Modèle', 
-                'Plaque', 'Poids max (kg)', 'Tarif/h (€)', 'Note', 'Livraisons', 
+                'Plaque', 'Poids max (kg)', 'Tarif/h (XOF)', 'Note', 'Livraisons', 
                 'Vérifié', 'Disponible', 'Date inscription'
             ]);
             
@@ -284,7 +309,7 @@ class TravelerController extends Controller
                     $traveler->traveler_id,
                     $traveler->user->first_name . ' ' . $traveler->user->last_name,
                     $traveler->user->email,
-                    $traveler->user->phone,
+                    $traveler->user->phone_number,
                     $traveler->vehicle_type,
                     $traveler->vehicle_model,
                     $traveler->license_plate,
